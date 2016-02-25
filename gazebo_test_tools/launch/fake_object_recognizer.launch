@@ -1,0 +1,12 @@
+<launch>
+
+    <arg name="config_file" default="$(find gazebo_test_tools)/config/FakeObjectRecognizer.yaml"/>
+
+    <rosparam ns="gazebo_test_tools" file="$(arg config_file)"/>
+
+	# name of the node
+	<arg name="node_name" default="fake_object_recognizer"/>
+
+	<node name="$(arg node_name)" pkg="gazebo_test_tools" type="fake_object_recognizer_node" respawn="true" output="screen"/>
+</launch>
+
