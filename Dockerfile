@@ -1,4 +1,4 @@
-FROM jenniferbuehler/TODO:general-message-pkgs 
+FROM jenniferbuehler/general-message-pkgs 
 
 MAINTAINER Jennifer Buehler
 
