@@ -97,7 +97,8 @@ bool FakeObjectRecognizer::recognizeObject(gazebo_test_tools::RecognizeGazeboObj
         res.success=false;
         return true;
     }
-       
+
+    ROS_INFO_STREAM("Publishing object "<<object);       
     object_pub.publish(object);
     return true;
 }
