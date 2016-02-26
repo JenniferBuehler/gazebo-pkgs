@@ -31,7 +31,7 @@ namespace gazebo
  * This plugin is a system plugin which has to be loaded
  * together with gazebo, e.g.:
  *
- * ``gzserver -s libgazebo_plugin_loader.so``
+ * ``gzserver -s libgazebo_world_plugin_loader.so``
  *
  * **Limitation:**
  *

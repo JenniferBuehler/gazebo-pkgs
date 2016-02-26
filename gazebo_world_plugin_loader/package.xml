@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <package>
-  <name>gazebo_state_plugins</name>
+  <name>gazebo_world_plugin_loader</name>
   <version>0.0.0</version>
   <description>
-      Offers topics and services related to the state of the world in 
-      Gazebo.
+      Offers a *system* plugin which can be
+      used to load other *world* plugins after the world has been
+      loaded, so it doesn't have to be specified in the Gazebo "world" file.
   </description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
@@ -21,7 +22,7 @@
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/gazebo_state_plugins</url> -->
+  <!-- <url type="website">http://wiki.ros.org/gazebo_world_plugin_loader</url> -->
 
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->
@@ -42,20 +43,8 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>geometry_msgs</build_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>gazebo_world_plugin_loader</build_depend>
-  <build_depend>shape_msgs</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>object_msgs</build_depend>
-  <build_depend>eigen_conversions</build_depend>
-  <run_depend>gazebo_world_plugin_loader</run_depend>
-  <run_depend>object_msgs</run_depend>
-  <run_depend>eigen_conversions</run_depend>
-  <run_depend>geometry_msgs</run_depend>
   <run_depend>roscpp</run_depend>
-  <run_depend>shape_msgs</run_depend>
-  <run_depend>std_msgs</run_depend>
 
   <run_depend>gazebo_ros</run_depend>
   <build_depend>gazebo_ros</build_depend>
@@ -66,6 +55,5 @@
     <!-- <metapackage/> -->
 
     <!-- Other tools can request additional information be placed here -->
-
   </export>
 </package>

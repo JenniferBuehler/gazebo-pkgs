@@ -1,4 +1,4 @@
-#include <gazebo_state_plugins/GazeboPluginLoader.h>
+#include <gazebo_world_plugin_loader/GazeboPluginLoader.h>
 
 #include <gazebo/physics/World.hh>
 #include <gazebo/physics/PhysicsIface.hh>
@@ -41,7 +41,7 @@ void GazeboPluginLoader::onWorldCreate(){
     node.getParam("world_plugins", world_plugins);
     if (world_plugins.getType() != XmlRpc::XmlRpcValue::TypeArray)
     {
-      ROS_ERROR("Parameter world_plugins should be specified as an array");
+      ROS_ERROR("Parameter world_plugins should be specified as an array. Gazebo world plugins won't be loaded.");
       return;
     }
 
@@ -50,7 +50,7 @@ void GazeboPluginLoader::onWorldCreate(){
     {
       if (!world_plugins[i].hasMember("name") || !world_plugins[i].hasMember("file"))
       {
-            ROS_ERROR("World plugin parameter specification should have 'name' and 'file'");
+            ROS_ERROR("World plugin parameter specification should have 'name' and 'file'. Gazebo world plugins won't be loaded.");
             continue;
       }
       std::string name=world_plugins[i]["name"];

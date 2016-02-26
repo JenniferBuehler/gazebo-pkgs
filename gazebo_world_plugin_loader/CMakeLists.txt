@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(gazebo_state_plugins)
+project(gazebo_world_plugin_loader)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -7,14 +7,8 @@ project(gazebo_state_plugins)
 find_package(
   catkin 
   REQUIRED COMPONENTS
-  gazebo_world_plugin_loader
-  geometry_msgs
   roscpp
-  shape_msgs
-  std_msgs
   gazebo_ros
-  object_msgs
-  eigen_conversions
 )
 
 find_package(gazebo REQUIRED)
@@ -35,8 +29,8 @@ find_package(gazebo REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-  LIBRARIES gazebo_state_plugins gazebo_map_publisher
-  CATKIN_DEPENDS geometry_msgs roscpp shape_msgs std_msgs gazebo_ros
+  LIBRARIES gazebo_world_plugin_loader
+  CATKIN_DEPENDS roscpp gazebo_ros
 #  DEPENDS system_lib
 )
 
@@ -53,35 +47,14 @@ include_directories(
   ${GAZEBO_INCLUDE_DIRS}
 )
 
-## Declare a cpp library
-add_library(gazebo_object_info
-   src/GazeboObjectInfo.cpp
+add_library(gazebo_world_plugin_loader
+    src/GazeboPluginLoader.cpp
 )
 
-add_library(gazebo_map_publisher
-   src/GazeboMapPublisher.cpp
-)
+add_dependencies(gazebo_world_plugin_loader ${catkin_EXPORTED_TARGETS})
 
-
-## Declare a cpp executable
-add_executable(gazebo_request_object_info test/object_info_request.cpp)
-
-## Add cmake target dependencies of the executable/library
-## as an example, message headers may need to be generated before nodes
-add_dependencies(gazebo_request_object_info ${catkin_EXPORTED_TARGETS})
-add_dependencies(gazebo_object_info ${catkin_EXPORTED_TARGETS})
-add_dependencies(gazebo_map_publisher ${catkin_EXPORTED_TARGETS})
-
-## Specify libraries to link a library or executable target against
-target_link_libraries(gazebo_object_info
+target_link_libraries(gazebo_world_plugin_loader
    ${GAZEBO_LIBRARIES}
-   ${catkin_LIBRARIES}
-)
-target_link_libraries(gazebo_map_publisher
-   ${GAZEBO_LIBRARIES}
-   ${catkin_LIBRARIES}
-)
-target_link_libraries(gazebo_request_object_info
    ${catkin_LIBRARIES}
 )
 
@@ -101,7 +74,7 @@ target_link_libraries(gazebo_request_object_info
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS gazebo_state_plugins gazebo_state_plugins_node
+# install(TARGETS gazebo_world_plugin_loader gazebo_world_plugin_loader_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -126,7 +99,7 @@ target_link_libraries(gazebo_request_object_info
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_gazebo_state_plugins.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_gazebo_world_plugin_loader.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
