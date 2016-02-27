@@ -6,7 +6,7 @@ int main(int argc, char** argv) {
 
     if (argc < 5)
     {
-        ROS_INFO("Usage: %s <name> [x y z].",argv[0]);
+        ROS_INFO("Usage: %s <name> [x y z] [frame_id].",argv[0]);
         return 0;
     }
 
@@ -22,11 +22,14 @@ int main(int argc, char** argv) {
     float y=0;
     float z=0;
 
+    std::string frame_id="world";
     if (argc>2) x=atof(argv[2]);
     if (argc>3) y=atof(argv[3]);
     if (argc>4) z=atof(argv[4]);
-    
-    spawner.spawnCube(name,"world",x,y,z,0,0,0,1);
+    if (argc>5) frame_id=argv[5];
+   
+
+    spawner.spawnCube(name,frame_id,x,y,z,0,0,0,1);
     
     return 0;
 }

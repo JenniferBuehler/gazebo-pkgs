@@ -92,7 +92,10 @@ void GazeboGraspFix::InitValues(){
 }
 
 
-void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf) {
+void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
+{
+    std::cout<<"Loading grasp-fix plugin"<<std::endl;
+
     this->model = _parent;
     this->world = this->model->GetWorld();
     this->physics = this->model->GetWorld()->GetPhysicsEngine();
