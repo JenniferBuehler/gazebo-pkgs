@@ -10,12 +10,10 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-
     ros::NodeHandle node; 
     gazebo_test_tools::GazeboCubeSpawner spawner(node);
 
     ROS_INFO("Running spawn cube once..");
-        
 
     std::string name=argv[1];
     float x=0;
@@ -27,9 +25,10 @@ int main(int argc, char** argv) {
     if (argc>3) y=atof(argv[3]);
     if (argc>4) z=atof(argv[4]);
     if (argc>5) frame_id=argv[5];
-   
 
-    spawner.spawnCube(name,frame_id,x,y,z,0,0,0,1);
-    
+    float dim=0.05;   
+    float mass=0.05;
+
+    spawner.spawnCube(name,frame_id,x,y,z,0,0,0,1,dim,dim,dim,mass);
     return 0;
 }
