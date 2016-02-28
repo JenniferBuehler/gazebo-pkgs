@@ -8,9 +8,11 @@
 namespace gazebo {
 
 /**
- * Inspired by gazebo::physics::Gripper, this is our own implementation which does not use deprecated functions any more.
+ * Inspired by gazebo::physics::Gripper, this plugin fixes an object which is grasped to the
+ * robot hand to avoid problems with physics engines and to help the object staying in
+ * the robot hand without slipping out.
  *
- * This is a *model* pluing, so you have to load the model plugin from the robot URDF:
+ * This is a *model* plugin, so you have to load the model plugin from the robot URDF:
  *
  * ```xml
  *   <gazebo>
