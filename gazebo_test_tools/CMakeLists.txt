@@ -106,11 +106,13 @@ add_library(fake_object_recognizer
 add_executable(cube_spawner src/cube_spawner_node.cpp)
 add_executable(fake_object_recognizer_node src/fake_object_recognizer_node.cpp)
 add_executable(fake_object_recognizer_cmd test/fake_object_recognizer_cmd.cpp)
+add_executable(set_gazebo_physics_client src/SetGazeboPhysicsClient.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 add_dependencies(gazebo_test_tools ${catkin_EXPORTED_TARGETS})
 add_dependencies(cube_spawner ${catkin_EXPORTED_TARGETS})
+add_dependencies(set_gazebo_physics_client ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(fake_object_recognizer gazebo_test_tools_generate_messages_cpp)
 add_dependencies(fake_object_recognizer ${catkin_EXPORTED_TARGETS})
@@ -134,6 +136,10 @@ target_link_libraries(cube_spawner
 )
 
 target_link_libraries(fake_object_recognizer
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(set_gazebo_physics_client
    ${catkin_LIBRARIES}
 )
 
