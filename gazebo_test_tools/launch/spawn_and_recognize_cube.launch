@@ -1,0 +1,5 @@
+<launch>
+	<node name="test_cube_spawn" pkg="gazebo_test_tools" type="cube_spawner" respawn="false" output="screen" args="cube1 0 0 1"/>
+	<node name="test_recognise_cube" pkg="gazebo_test_tools" type="fake_object_recognizer_cmd" respawn="false" output="screen" args="cube1 1"/>
+</launch>
+

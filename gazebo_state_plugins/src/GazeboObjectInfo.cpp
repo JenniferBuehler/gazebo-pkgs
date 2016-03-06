@@ -1,5 +1,5 @@
 #include <gazebo_state_plugins/GazeboObjectInfo.h>
-
+#include <object_msgs_tools/ObjectFunctions.h>
 #include <gazebo/physics/Link.hh>
 #include <gazebo/physics/BoxShape.hh>
 #include <gazebo/physics/SphereShape.hh>
@@ -60,7 +60,7 @@ bool GazeboObjectInfo::requestObject(object_msgs::ObjectInfo::Request &req, obje
     physics::ModelPtr model=world->GetModel(modelName);
 
     if (!model.get()) {
-        ROS_ERROR("Model %s not found",modelName.c_str());
+        // ROS_ERROR("Model %s not found",modelName.c_str());
         res.success=false;
         return true;
     }
@@ -164,8 +164,8 @@ shape_msgs::SolidPrimitive * GazeboObjectInfo::getSolidPrimitive(physics::Collis
 }
 
 
-GazeboObjectInfo::ObjectMsg GazeboObjectInfo::createBoundingBoxObject(physics::ModelPtr& model, bool include_shape){
-
+GazeboObjectInfo::ObjectMsg GazeboObjectInfo::createBoundingBoxObject(physics::ModelPtr& model, bool include_shape)
+{
     GazeboObjectInfo::ObjectMsg obj;
 
     physics::Link_V links=model->GetLinks();
@@ -174,21 +174,23 @@ GazeboObjectInfo::ObjectMsg GazeboObjectInfo::createBoundingBoxObject(physics::M
     obj.name=model->GetName();
     obj.header.stamp=ros::Time::now();
     obj.header.frame_id=ROOT_FRAME_ID;
-
-    for (l_it=links.begin(); l_it!=links.end(); ++l_it){
-
+    // obj.type =  no object type given
+    // the custum origin (Object::origin) is going to be set to the first link encountered
+    bool origin_init = false;
+    for (l_it=links.begin(); l_it!=links.end(); ++l_it)
+    {
         physics::LinkPtr link=*l_it;
         
         std::string linkName=link->GetName();
         
-        math::Pose link_pose=link->GetWorldPose ();
+        math::Pose link_pose=link->GetWorldPose();
         //ROS_INFO("Link for model %s: %s, pos %f %f %f",model->GetName().c_str(),link->GetName().c_str(),link_pose.pos.x,link_pose.pos.y,link_pose.pos.z);
         //ROS_INFO("Link found for model %s: %s",model->GetName().c_str(),link->GetName().c_str());
 
         physics::Collision_V colls=link->GetCollisions();
         physics::Collision_V::iterator cit;
-        for (cit=colls.begin(); cit!=colls.end(); ++cit) {
-
+        for (cit=colls.begin(); cit!=colls.end(); ++cit)
+        {
             physics::CollisionPtr c=*cit;
             
             math::Pose rel_pose=c->GetRelativePose();
@@ -208,7 +210,11 @@ GazeboObjectInfo::ObjectMsg GazeboObjectInfo::createBoundingBoxObject(physics::M
             pose.orientation.w=coll_pose.rot.w;
 
             obj.primitive_poses.push_back(pose);
-
+        
+            if (!origin_init)
+            {
+                obj.origin = pose;
+            }
     
             if (include_shape) {
 
@@ -225,9 +231,12 @@ GazeboObjectInfo::ObjectMsg GazeboObjectInfo::createBoundingBoxObject(physics::M
                 obj.content=GazeboObjectInfo::ObjectMsg::POSE;
                 //ROS_INFO("Pub pose for %s (%s %s)",c->GetName().c_str(),link->GetName().c_str(),model->GetName().c_str());
             }
-        
         }
     }
+
+    obj.primitive_origin = GazeboObjectInfo::ObjectMsg::ORIGIN_AVERAGE;
+    obj.mesh_origin = GazeboObjectInfo::ObjectMsg::ORIGIN_UNDEFINED;
+
     return obj;
 }
 

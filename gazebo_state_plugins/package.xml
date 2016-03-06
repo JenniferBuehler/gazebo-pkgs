@@ -48,9 +48,11 @@
   <build_depend>shape_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>object_msgs</build_depend>
+  <build_depend>object_msgs_tools</build_depend>
   <build_depend>eigen_conversions</build_depend>
   <run_depend>gazebo_world_plugin_loader</run_depend>
   <run_depend>object_msgs</run_depend>
+  <run_depend>object_msgs_tools</run_depend>
   <run_depend>eigen_conversions</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>roscpp</run_depend>

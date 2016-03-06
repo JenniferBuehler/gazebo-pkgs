@@ -1,4 +1,5 @@
 #include <gazebo_test_tools/FakeObjectRecognizer.h>
+#include <object_msgs/RegisterObject.h>
 #include <boost/thread.hpp>
 
 #include <iostream>
@@ -6,6 +7,7 @@
 #define DEFAULT_OBJECTS_TOPIC "world/objects"
 #define DEFAULT_SERVICE_REQUEST_OBJECT_TOPIC "world/request_object"
 #define DEFAULT_SERVICE_RECOGNISE_OBJECT_TOPIC "/recognize_object"
+#define DEFAULT_SERVICE_REGISTER_OBJECT_TF_TOPIC "/register_object"
 #define DEFAULT_PUBLISH_RECOGNISED_OBJECT_RATE 1
 
 using gazebo_test_tools::FakeObjectRecognizer;
@@ -19,24 +21,23 @@ FakeObjectRecognizer::FakeObjectRecognizer() {
     _node.param<std::string>("request_object_service", SERVICE_REQUEST_OBJECT_TOPIC, DEFAULT_SERVICE_REQUEST_OBJECT_TOPIC);
     ROS_INFO("Got object service topic name: <%s>", SERVICE_REQUEST_OBJECT_TOPIC.c_str());
     
-    SERVICE_RECOGNISE_OBJECT_TOPIC= DEFAULT_SERVICE_RECOGNISE_OBJECT_TOPIC;
-    _node.param<std::string>("recognize_object_service", SERVICE_RECOGNISE_OBJECT_TOPIC,SERVICE_RECOGNISE_OBJECT_TOPIC);
+    _node.param<std::string>("recognize_object_service", SERVICE_RECOGNISE_OBJECT_TOPIC, DEFAULT_SERVICE_RECOGNISE_OBJECT_TOPIC);
+    
+    _node.param<std::string>("register_object_tf_service", SERVICE_REGISTER_OBJECT_TF_TOPIC, DEFAULT_SERVICE_REGISTER_OBJECT_TF_TOPIC);
+    ROS_INFO("Got register object tf service topic name: <%s>", SERVICE_REGISTER_OBJECT_TF_TOPIC.c_str());
 
-    std::stringstream def_coll_rate;
-    def_coll_rate<<DEFAULT_PUBLISH_RECOGNISED_OBJECT_RATE;    
-    std::string _PUBLISH_RECOGNISED_OBJECT_RATE=def_coll_rate.str();
-    _node.param<std::string>("publish_recognition_rate", _PUBLISH_RECOGNISED_OBJECT_RATE, _PUBLISH_RECOGNISED_OBJECT_RATE);
-    PUBLISH_RECOGNISED_OBJECT_RATE=atof(_PUBLISH_RECOGNISED_OBJECT_RATE.c_str());
+    int PUBLISH_RECOGNISED_OBJECT_RATE;
+    _node.param<int>("publish_recognition_rate", PUBLISH_RECOGNISED_OBJECT_RATE, PUBLISH_RECOGNISED_OBJECT_RATE);
 
-    ros::NodeHandle nodePub("");
-    if (SERVICE_REQUEST_OBJECT_TOPIC!="") object_info_client = nodePub.serviceClient<object_msgs::ObjectInfo>(SERVICE_REQUEST_OBJECT_TOPIC);
+    if (!SERVICE_REQUEST_OBJECT_TOPIC.empty()) object_info_client = node.serviceClient<object_msgs::ObjectInfo>(SERVICE_REQUEST_OBJECT_TOPIC);
+    if (!SERVICE_REGISTER_OBJECT_TF_TOPIC.empty()) register_object_tf_client = node.serviceClient<object_msgs::RegisterObject>(SERVICE_REGISTER_OBJECT_TF_TOPIC);
 
-    recognize_object_srv = nodePub.advertiseService(SERVICE_RECOGNISE_OBJECT_TOPIC, &FakeObjectRecognizer::recognizeObject,this);
+    recognize_object_srv = node.advertiseService(SERVICE_RECOGNISE_OBJECT_TOPIC, &FakeObjectRecognizer::recognizeObject,this);
 
-    object_pub = nodePub.advertise<object_msgs::Object>(OBJECTS_TOPIC, 100); 
+    object_pub = node.advertise<object_msgs::Object>(OBJECTS_TOPIC, 100); 
 
     ros::Rate rate(PUBLISH_RECOGNISED_OBJECT_RATE);
-    publishTimer=nodePub.createTimer(rate,&FakeObjectRecognizer::publishRecognitionEvent, this);
+    publishTimer=node.createTimer(rate,&FakeObjectRecognizer::publishRecognitionEvent, this);
 }
 
 FakeObjectRecognizer::~FakeObjectRecognizer() {
@@ -53,9 +54,9 @@ void FakeObjectRecognizer::publishRecognitionEvent(const ros::TimerEvent& e) {
         // get the object information. Only the pose is required because
         // the shape has been published in recognizeObject() already and
         // it only needs to be published once when the object is first added.
-        if (!getGazeboObject(*it,object,false))
+        if (!queryObjectInfo(*it,object,false, true))
         {
-            ROS_ERROR_STREAM("Could not find Gazebo object "<<*it);
+            ROS_ERROR_STREAM("Could not find object "<<*it);
             continue;
         }
         object_pub.publish(object);
@@ -65,7 +66,7 @@ void FakeObjectRecognizer::publishRecognitionEvent(const ros::TimerEvent& e) {
 bool FakeObjectRecognizer::recognizeObject(gazebo_test_tools::RecognizeGazeboObject::Request &req,
         gazebo_test_tools::RecognizeGazeboObject::Response &res)
 {
-    ROS_INFO_STREAM("Recognizing gazebo object "<<req.name); 
+    ROS_INFO_STREAM("Recognizing object "<<req.name); 
     
     res.success=true;
     boost::unique_lock<boost::mutex> lock(addedObjectsMtx);
@@ -91,29 +92,58 @@ bool FakeObjectRecognizer::recognizeObject(gazebo_test_tools::RecognizeGazeboObj
     if (req.republish) addedObjects.insert(req.name);
 
     object_msgs::Object object;
-    if (!getGazeboObject(req.name,object,true))
+    // try this for a while, because sometimes when an object has just been
+    // created / spawned, it may take a while for the service to return
+    // information about it (before that it can't find it, e.g. if an object
+    // is spawned in Gazebo and right after the recognition is triggered)
+    float timeout = 3;
+    float checkStep = 0.5;
+    if (!waitForQueryObjectInfo(req.name,object,true, timeout, checkStep, false))
     {
-        ROS_ERROR_STREAM("Could not find Gazebo object "<<req.name);
+        ROS_ERROR_STREAM("Could not find object "<<req.name);
         res.success=false;
         return true;
     }
 
-    ROS_INFO_STREAM("Publishing object "<<object);       
+    // ROS_INFO_STREAM("Publishing object "<<object);       
     object_pub.publish(object);
+
+    // now, also register this object to be broadcasted in tf:
+    object_msgs::RegisterObject srv;
+	srv.request.name = object.name;
+	if (register_object_tf_client.call(srv))
+	{
+		ROS_INFO("FakeObjectRecogniser: Register tf result:");
+		std::cout<<srv.response<<std::endl;
+	}
     return true;
 }
 
+bool FakeObjectRecognizer::waitForQueryObjectInfo(const std::string& name, object_msgs::Object& object,
+    bool include_geometry, float timeout, float checkStep, bool printErrors)
+{
+    ros::Time startTime=ros::Time::now();
+    float timeWaited = 0;
+    while (timeWaited < timeout)
+    {
+        if (queryObjectInfo(name, object, include_geometry, printErrors)) return true;
+        ros::Duration(checkStep).sleep();
+        ros::Time currTime = ros::Time::now();
+        timeWaited = (currTime-startTime).toSec();
+    }
+    return false;
+}
 
-bool FakeObjectRecognizer::getGazeboObject(const std::string& name, object_msgs::Object& object, bool include_geometry){
+bool FakeObjectRecognizer::queryObjectInfo(const std::string& name, object_msgs::Object& object, bool include_geometry, bool printErrors){
     object_msgs::ObjectInfo srv;
     srv.request.name=name;
     srv.request.get_geometry=include_geometry;
     if (!object_info_client.call(srv)){
-        ROS_ERROR("Could not get object %s because service request failed.",name.c_str());
+        if (printErrors) ROS_ERROR("Could not get object %s because service request failed.",name.c_str());
         return false;
     }
     if (!srv.response.success) {
-        ROS_ERROR("Could not get object %s because it does not exist in Gazebo.",name.c_str());
+        if (printErrors) ROS_ERROR("Could not get object %s because it does not exist.",name.c_str());
         return false;
     }
     object=srv.response.object;

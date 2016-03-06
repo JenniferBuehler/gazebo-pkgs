@@ -55,7 +55,18 @@ private:
 
     void publishRecognitionEvent(const ros::TimerEvent& e); 
 
-    bool getGazeboObject(const std::string& name, object_msgs::Object& object, bool include_geometry);
+    /**
+     * Like queryObjectInfo but waits a maximum of \e timeout and re-requests
+     * the information every \e checkStep seconds.
+     */
+    bool waitForQueryObjectInfo(const std::string& name, object_msgs::Object& object,
+        bool include_geometry,  float timeout, float checkStep, bool printErrors);
+
+    /**
+     * Uses the object information service to request object information
+     */
+    bool queryObjectInfo(const std::string& name, object_msgs::Object& object,
+        bool include_geometry, bool printErrors);
 
     std::string OBJECTS_TOPIC;
 
@@ -67,12 +78,19 @@ private:
     // an object, of type gazebo_test_tools/TriggerRecognition.srv.
     std::string SERVICE_RECOGNISE_OBJECT_TOPIC;
 
+    
+    // service of under which a object_msgs_tools/RegisterObject can
+    // be sent in order to start publishing /tf information about an
+    // object.
+    std::string SERVICE_REGISTER_OBJECT_TF_TOPIC;
+
     // Recognised objects which are to be continuously published
     // as recognised are published at this rate.
     float PUBLISH_RECOGNISED_OBJECT_RATE;
 
     ros::Publisher object_pub;
     ros::ServiceClient object_info_client;
+    ros::ServiceClient register_object_tf_client;
     
     ros::ServiceServer recognize_object_srv;
 
@@ -83,6 +101,8 @@ private:
     boost::mutex addedObjectsMtx;
 
     ros::Timer publishTimer;
+
+    ros::NodeHandle node;
 };
 
 }  // namespace gazebo_test_tools

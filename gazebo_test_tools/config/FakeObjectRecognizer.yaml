@@ -13,4 +13,7 @@ publish_recognition_rate: 10
 # can be requested.
 request_object_service: "/gazebo_objects/get_info"
 
-
+# service of under which a object_msgs_tools/RegisterObject can
+# be sent in order to start publishing /tf information about an
+# object.
+register_object_tf_service: "/object_tf_broadcaster/register_object"
