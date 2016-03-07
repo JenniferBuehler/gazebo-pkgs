@@ -17,62 +17,63 @@ namespace gazebo {
  * ```xml
  *   <gazebo>
  *       <plugin name="gazebo_grasp_fix" filename="libgazebo_grasp_fix.so">
- *           <!-- Palm link: The link to which the object is attached -->
  *           <palm_link> hand_link_name  </palm_link>
- *
- *           <!-- All gripper links which collide with the object to *actively* grasp it -->
  *           <gripper_link> finger_index_link_1 </gripper_link>
  *           <gripper_link> finger_index_link_2 </gripper_link>
  *           <gripper_link> ... </gripper_link>
- *           <!-- tolerance angle (in degrees) between two force vectors to be considered
- *                "opposing forces". If the angle is smaller than this, they are not opposing.
- *             -->
- *           <forces_angle_tolerance>120</forces_angle_tolerance>
- *
- *           <!-- the rate at which all collision points are checked against the "gripping criterion".
- *              Note that in-between such updates, existing collisions may be collected at
- *              a higher rate (the Gazebo world update rate). This rate is only the rate at
- *              which they are processed, which takes a bit of computation time, and therefore
- *              should be lower than the gazebo world update rate.  -->
- *           <update_rate>5</update_rate>
- *
- *           <!-- Number of times an object has to be detected as "gripped" in order to
- *                attach the object. Adjust this with the update rate. -->
- *           <grip_count_threshold>5</grip_count_threshold>
- *
- *           <!-- Maximum number of times that a "grasped" condition counted for an
- *                object. Should be at least double of grip_count_threshold. If the object
- *                has been counted this amount of times in subsequent update iterations as
- *                "grasped", the number will not increase any further. As soon as the grasp
- *                criterion does not hold any more, the number will start to decrease by one time
- *                each time the object is detected as "not grasped" in an update iteration. This is
- *                like a "buffer" which, when it is full, maintains the state, and when it is empty again,
- *                the object is released -->
- *           <max_grip_count>10</max_grip_count>
- *
- *           <!-- The distance which the gripper links are allowed to move away from the object
- *                *during* a grasp without the object being detached, even if there are currently no
- *                contacts. This can happen if the fingers "wobble" or move ever so slightly, and therefore
- *                the grasp is not detected as active any more. Setting this number too high will also lead
- *                to the object not being detached even if the grippers have opened up to release it. -->
+ *           <forces_angle_tolerance>100</forces_angle_tolerance>
+ *           <update_rate>4</update_rate>
+ *           <grip_count_threshold>4</grip_count_threshold>
+ *           <max_grip_count>8</max_grip_count>
  *           <release_tolerance>0.005</release_tolerance>
- *
- *           <!-- when an object is attached, collisions with it may be disabled, in case the
- *                robot still keeps wobbling. -->  
  *           <disable_collisions_on_attach>false</disable_collisions_on_attach>
- *
- *           <!-- The gazebo topic of contacts. Should normally be left at __default_topic__  -->
  *           <contact_topic>__default_topic__</contact_topic>
  *       </plugin>
  *   </gazebo>
  * ```
  *
- * Methods OnUpdate() and OnContact() contain detailed documentation on how the plugin works.
- * Summarizing it:
- *  XXX TODO
+ *    Description of the arguments:
+ *
+ *    - ``<palm_link>`` has to be the link to which the finger joints are attached.
+ *    - ``<gripper_link>`` tags have to include -all- link names of the gripper/hand which are used to
+ *        actively grasp objects (these are the links which determine whether a "grasp" exists according to 
+ *        above described criterion).
+ *    - ``<update_rate>`` is the rate at which all contact points are checked against the "gripping criterion".
+ *          Note that in-between such updates, existing contact points may be collected at
+ *          a higher rate (the Gazebo world update rate). The ``update_rate`` is only the rate at
+ *          which they are processed, which takes a bit of computation time, and therefore
+ *          should be lower than the gazebo world update rate.
+ *    - ``<forces_angle_tolerance>`` is the tolerance angle (in degrees) between two force vectors to be considered
+ *           "opposing forces". If the angle is smaller than this, they are not opposing.
+ *    - ``<grip_count_threshold>`` is number of times in the update loop (running at update_rate) that an object has
+ *            to be detected as "gripped" in order to attach the object.
+ *            Adjust this with the update rate.
+ *    - ``<max_grip_count>`` is the maximum number of a counter:
+ *            At each update iteration (running at update_rate), if the "gripping criterion" is
+ *            met for an object, a counter for this object is increased. ``max_grip_count`` is
+ *            the maximum number recorded for an object. As soon as the counter goes beyond this
+ *            number, the counter is stopped. As soon as the "gripping criterion" does not
+ *            hold any more, the number will start to decrease again, (by 1 each time the object
+ *            is detected as "not grasped" in an update iteration). So this counter is
+ *            like a "buffer" which, when it is full, maintains the state, and when it is empty,
+ *            again, the object is released.
+ *            This should be at least double of ``grip_count_threshold``.
+ *    - ``<release_tolerance>`` is the distance which the gripper links are allowed to move away from the object
+ *            during- a grasp without the object being detached, even if there are currently no
+ *            actual contacts on the object. This condition can happen if the fingers "wobble"
+ *            or move ever so slightly away from the object, and therefore the "gripping criterion"
+ *            fails in a few subsequent update iterations. This setting is to make the behaviour more
+ *            stable.
+ *            Setting this number too high will also lead to the object not being detached even
+ *            if the grippers have opened up to release it, so use this with care.
+ *    - ``<disable_collisions_on_attach>`` can be used for the following:
+ *            When an object is attached, collisions with it may be disabled, in case the
+ *            robot still keeps wobbling.
+ *    - ``<contact_topic>`` is the gazebo topic of contacts. Should normally be left at -\_\_default_topic\_\_-.
  *
  * Current limitation:
  *  - Only one object can be attached per gripper.
+ *
  * \author Jennifer Buehler
  */ 
 class GazeboGraspFix : public ModelPlugin {
