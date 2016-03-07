@@ -81,9 +81,19 @@ public:
     GazeboGraspFix();
     GazeboGraspFix(physics::ModelPtr _model);
     virtual ~GazeboGraspFix();
+
+    /**
+     * Gets called just after the object has been attached to the link
+     */
+    virtual void OnAttach(const std::string& objectName){}
+    /**
+     * Gets called just after the object has been detached to the link
+     */
+    virtual void OnDetach(const std::string& objectName){}
+
+private: 
     virtual void Init(); 
     virtual void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf);
-private: 
     /**
      * Collects for each object all forces which are currently applied on it.
      * Then, for each object, checks whether of all the forces applied,

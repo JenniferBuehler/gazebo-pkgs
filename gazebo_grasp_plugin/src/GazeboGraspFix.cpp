@@ -617,6 +617,7 @@ bool GazeboGraspFix::HandleAttach(const std::string& objName)
     }
     gazebo::math::Pose diff = obj->GetLink()->GetWorldPose() - this->palmLink->GetWorldPose();
     this->palmLink->AttachStaticModel(obj,diff);
+    this->OnAttach(objName);
 #else
     physics::CollisionPtr obj = boost::dynamic_pointer_cast<physics::Collision>(this->world->GetEntity(objName));
     if (!obj.get()){
@@ -633,6 +634,7 @@ bool GazeboGraspFix::HandleAttach(const std::string& objName)
         // it, the fingers keep wobbling, which can create difficulties when moving the arm. 
         obj->GetLink()->SetCollideMode("none");
     }
+    this->OnAttach(objName);
 #endif  // USE_MODEL_ATTACH
     return true;
 }
@@ -646,6 +648,7 @@ void GazeboGraspFix::HandleDetach(const std::string& objName)
         return;
     }
     this->palmLink->DetachStaticModel(objName);
+    this->OnDetach(objName);
 #else
     physics::CollisionPtr obj = boost::dynamic_pointer_cast<physics::Collision>(this->world->GetEntity(objName));
     if (!obj.get()){
@@ -657,5 +660,6 @@ void GazeboGraspFix::HandleDetach(const std::string& objName)
         obj->GetLink()->SetCollideMode("all");
     }
     this->fixedJoint->Detach();
+    this->OnDetach(objName);
 #endif  // USE_MODEL_ATTACH
 }
