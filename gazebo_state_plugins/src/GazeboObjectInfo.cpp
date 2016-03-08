@@ -62,9 +62,11 @@ bool GazeboObjectInfo::requestObject(object_msgs::ObjectInfo::Request &req, obje
     if (!model.get()) {
         // ROS_ERROR("Model %s not found",modelName.c_str());
         res.success=false;
+        res.error_code=object_msgs::ObjectInfo::Response::OBJECT_NOT_FOUND;
         return true;
     }
-
+        
+    res.error_code=object_msgs::ObjectInfo::Response::NO_ERROR;
     res.success=true;
     res.object=createBoundingBoxObject(model,req.get_geometry);
     //ROS_INFO("Received service request for object info!");
