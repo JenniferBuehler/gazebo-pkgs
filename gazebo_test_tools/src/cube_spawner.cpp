@@ -18,8 +18,18 @@ GazeboCubeSpawner::GazeboCubeSpawner(NodeHandle &n) : nh(n){
     spawn_object = n.serviceClient<gazebo_msgs::SpawnModel>(SPAWN_OBJECT_TOPIC);
 }
 
+void GazeboCubeSpawner::spawnCube(const std::string& name, const std::string& frame_id,
+    float x, float y, float z, float qx, float qy, float qz, float qw,
+    float width, float height, float depth, float mass)
+{
+    spawnPrimitive(name, true, frame_id, x, y, z, qx, qy, qz, qw, width, height, depth, mass);
+}
 
-void GazeboCubeSpawner::spawnCube(const std::string& name, const std::string& frame_id, float x, float y, float z, float qx, float qy, float qz, float qw, float width, float height, float depth, float _mass) {
+void GazeboCubeSpawner::spawnPrimitive(const std::string& name, const bool doCube,
+    const std::string& frame_id,
+    float x, float y, float z, float qx, float qy, float qz, float qw,
+    float widthOrRadius, float height, float depth, float _mass)
+{
 
     geometry_msgs::Pose pose;
     pose.position.x=x;
@@ -33,9 +43,26 @@ void GazeboCubeSpawner::spawnCube(const std::string& name, const std::string& fr
     gazebo_msgs::SpawnModel spawn;
     spawn.request.model_name=name;
 
-    float w=width;
+    // just so the variable names are shorter..
+    float w=widthOrRadius;
     float h=height;
     float d=depth;
+
+    std::stringstream _s;
+    if (doCube)
+    {
+          _s<<"<box>\
+            <size>"<<w<<" "<<h<<" "<<d<<"</size>\
+          </box>";
+    }else{
+
+          _s<<"<cylinder>\
+                <length>"<<h<<"</length>\
+                <radius>"<<w<<"</radius>\
+            </cylinder>";
+    }
+    std::string geometryString = _s.str();
+
 
     float mass=_mass;
     float mass12=mass/12.0;
@@ -54,25 +81,38 @@ void GazeboCubeSpawner::spawnCube(const std::string& name, const std::string& fr
     <model name='"<<name<<"'>\
         <static>false</static>\
         <link name='link'>";
+
+    // inertia according to https://en.wikipedia.org/wiki/List_of_moments_of_inertia
     if (do_inertia) 
+    {
+        double xx, yy, zz;
+        if (doCube)
+        {
+            xx=mass12*(h*h+d*d);
+            yy=mass12*(w*w+d*d);
+            zz=mass12*(w*w+h*h);
+        }
+        else
+        {
+            xx=mass12*(3*w*w + h*h);
+            yy=mass12*(3*w*w + h*h);
+            zz=0.5*mass*w*w;
+        }
         s<<"<inertial>\
         <mass>"<<mass<<"</mass>\
         <inertia>\
-          <ixx>"<<mass12*(h*h+d*d)<<"</ixx>\
+          <ixx>"<<xx<<"</ixx>\
           <ixy>0.0</ixy>\
           <ixz>0.0</ixz>\
-          <iyy>"<<mass12*(w*w+d*d)<<"</iyy>\
+          <iyy>"<<yy<<"</iyy>\
           <iyz>0.0</iyz>\
-          <izz>"<<mass12*(w*w+h*h)<<"</izz>\
+          <izz>"<<zz<<"</izz>\
         </inertia>\
           </inertial>";
-         
+    }    
     s<<"<collision name='collision'>\
-        <geometry>\
-          <box>\
-            <size>"<<w<<" "<<h<<" "<<d<<"</size>\
-          </box>\
-        </geometry>";
+        <geometry>"<<geometryString;
+    s<<"</geometry>";
     if (do_surface)
         s<<"<surface>\
             <friction>\
@@ -100,12 +140,9 @@ void GazeboCubeSpawner::spawnCube(const std::string& name, const std::string& fr
             </contact>\
         </surface>";
       s<<"</collision>\
-          <visual name='visual'>\
-        <geometry>\
-          <box>\
-            <size>"<<w<<" "<<h<<" "<<d<<"</size>\
-          </box>\
-        </geometry>\
+          <visual name='visual'>";
+      s<<"<geometry>"<<geometryString;
+      s<<"</geometry>\
         <material>\
             <script>\
                 <uri>file://media/materials/scripts/gazebo.material</uri> \
