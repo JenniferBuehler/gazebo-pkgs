@@ -231,6 +231,39 @@ class GazeboGraspFix::ObjectContactInfo
 };
 
 
+
+bool GazeboGraspFix::isGripperLink(const std::string& linkName, std::string& gripperName) const
+{
+    for (std::map<std::string, GazeboGraspGripper>::const_iterator it=grippers.begin(); it!=grippers.end(); ++it)
+    {
+        if (it->second.hasLink(linkName))
+        {
+            gripperName=it->first;
+            return true;
+        }
+    }
+    return false;
+}   
+
+std::map<std::string, std::string> GazeboGraspFix::getAttachedObjects() const
+{
+    std::map<std::string, std::string> ret;
+    for (std::map<std::string, GazeboGraspGripper>::const_iterator it=grippers.begin(); it!=grippers.end(); ++it)
+    {
+        const std::string& gripperName = it->first;
+        const GazeboGraspGripper& gripper = it->second;
+        if (gripper.isObjectAttached())
+        {
+            ret[gripper.attachedObject()]=gripperName;
+        }
+    }
+    return ret;
+}   
+
+
+
+
+
 bool GazeboGraspFix::objectAttachedToGripper(const ObjectContactInfo& objContInfo, std::string& attachedToGripper) const
 {
     for (std::map<std::string, int>::const_iterator gripInvIt=objContInfo.grippersInvolved.begin();

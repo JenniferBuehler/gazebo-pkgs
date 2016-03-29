@@ -38,6 +38,7 @@ GazeboGraspGripper::~GazeboGraspGripper() {
 }
 
 
+
 bool GazeboGraspGripper::Init(physics::ModelPtr& _model,
     const std::string& _gripperName,
     const std::string& palmLinkName,
@@ -83,6 +84,40 @@ bool GazeboGraspGripper::Init(physics::ModelPtr& _model,
     }
     return !this->collisionElems.empty();
 }
+
+
+
+const std::string& GazeboGraspGripper::getGripperName() const
+{
+    return gripperName;
+}
+
+bool GazeboGraspGripper::hasLink(const std::string& linkName) const
+{
+    for (std::vector<std::string>::const_iterator it=linkNames.begin(); it!=linkNames.end(); ++it)
+    {
+        if (*it==linkName) return true;
+    }
+    return false;
+}
+
+bool GazeboGraspGripper::hasCollisionLink(const std::string& linkName) const
+{
+    return collisionElems.find(linkName) != collisionElems.end();
+}
+
+
+bool GazeboGraspGripper::isObjectAttached() const
+{
+    return attached;
+}
+
+const std::string& GazeboGraspGripper::attachedObject() const
+{
+    return attachedObjName; 
+}
+
+
 
 // #define USE_MODEL_ATTACH // this only works if the object is a model in itself, which is usually not
                             // the case. Leaving this in here anyway for documentation of what has been

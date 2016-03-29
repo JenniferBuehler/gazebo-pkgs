@@ -155,37 +155,12 @@ private:
      */
     bool checkGrip(const std::vector<math::Vector3>& forces, float minAngleDiff, float lengthRatio);
 
-    bool isGripperLink(const std::string& linkName, std::string& gripperName) const
-    {
-        for (std::map<std::string, GazeboGraspGripper>::const_iterator it=grippers.begin(); it!=grippers.end(); ++it)
-        {
-            if (it->second.hasLink(linkName))
-            {
-                gripperName=it->first;
-                return true;
-            }
-        }
-        return false;
-    }   
+    bool isGripperLink(const std::string& linkName, std::string& gripperName) const;   
 
     /**
      * return objects (key) and the gripper (value) to which it is attached
      */
-    std::map<std::string, std::string> getAttachedObjects() const
-    {
-        std::map<std::string, std::string> ret;
-        for (std::map<std::string, GazeboGraspGripper>::const_iterator it=grippers.begin(); it!=grippers.end(); ++it)
-        {
-            const std::string& gripperName = it->first;
-            const GazeboGraspGripper& gripper = it->second;
-            if (gripper.isObjectAttached())
-            {
-                ret[gripper.attachedObject()]=gripperName;
-            }
-        }
-        return ret;
-    }   
-
+    std::map<std::string, std::string> getAttachedObjects() const;   
 
     /**
      * Helper class to collect contact info per object.
