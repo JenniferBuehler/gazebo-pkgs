@@ -53,7 +53,7 @@ link_directories(
 )
 
 ## Declare a cpp library
-add_library(gazebo_grasp_fix SHARED src/GazeboGraspFix.cpp)
+add_library(gazebo_grasp_fix SHARED src/GazeboGraspFix.cpp src/GazeboGraspGripper.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
