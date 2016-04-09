@@ -1,7 +1,7 @@
 <launch>
-    <arg name="cube_x" default="0"/>
+    <arg name="cube_x" default="0.2"/>
     <arg name="cube_y" default="0"/>
-    <arg name="cube_z" default="1"/>
+    <arg name="cube_z" default="0.76"/>
     <arg name="cube_name" default="cube1"/>
     <arg name="in_frame" default="world"/>
 
