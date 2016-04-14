@@ -44,9 +44,12 @@ void GazeboGraspFix::Init()
 
 void GazeboGraspFix::InitValues()
 {
+#if GAZEBO_MAJOR_VERSION > 2
     gazebo::common::Console::SetQuiet(false);
+#endif
+
     // float timeDiff=0.25;
-    //this->releaseTolerance=0.005;
+    // this->releaseTolerance=0.005;
     // this->updateRate = common::Time(0, common::Time::SecToNano(timeDiff));
     this->prevUpdateTime = common::Time::GetWallTime();
     //float graspedSecs=2;
