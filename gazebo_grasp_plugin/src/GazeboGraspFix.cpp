@@ -69,16 +69,19 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     this->world = model->GetWorld();
     
     sdf::ElementPtr disableCollisionsOnAttachElem = _sdf->GetElement("disable_collisions_on_attach");
-    if (!disableCollisionsOnAttachElem.get()){
-        std::cout<<"GazeboGraspFix: Using  "<<DEFAULT_DISABLE_COLLISIONS_ON_ATTACH<<" because no <disable_collisions_on_attach> element specified."<<std::endl;
+    if (!disableCollisionsOnAttachElem){
+        std::cout<<"GazeboGraspFix: Using default "<<DEFAULT_DISABLE_COLLISIONS_ON_ATTACH<<" because no <disable_collisions_on_attach> element specified."<<std::endl;
         this->disableCollisionsOnAttach = DEFAULT_DISABLE_COLLISIONS_ON_ATTACH;
     } else {
-        this->disableCollisionsOnAttach = disableCollisionsOnAttachElem->Get<bool>();
+        std::string str = disableCollisionsOnAttachElem->Get<std::string>();
+        bool bVal = false;
+        if ((str=="true") || (str=="1"))  bVal = true;
+        this->disableCollisionsOnAttach = bVal;
         std::cout<<"GazeboGraspFix: Using disable_collisions_on_attach "<<this->disableCollisionsOnAttach<<std::endl;
     }
 
     sdf::ElementPtr forcesAngleToleranceElem = _sdf->GetElement("forces_angle_tolerance");
-    if (!forcesAngleToleranceElem.get()){
+    if (!forcesAngleToleranceElem){
         std::cout<<"GazeboGraspFix: Using default tolerance of "<<DEFAULT_FORCES_ANGLE_TOLERANCE<<" because no <forces_angle_tolerance> element specified."<<std::endl;
         this->forcesAngleTolerance = DEFAULT_FORCES_ANGLE_TOLERANCE * M_PI/180;
     } else {
@@ -87,7 +90,7 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 
     sdf::ElementPtr updateRateElem = _sdf->GetElement("update_rate");
     double _updateSecs;
-    if (!updateRateElem.get()){
+    if (!updateRateElem){
         std::cout<<"GazeboGraspFix: Using  "<<DEFAULT_UPDATE_RATE<<" because no <updateRate_tag> element specified."<<std::endl;
         _updateSecs = 1.0 / DEFAULT_UPDATE_RATE;
     } else {
@@ -99,7 +102,7 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     this->updateRate = common::Time(0, common::Time::SecToNano(_updateSecs));
 
     sdf::ElementPtr maxGripCountElem = _sdf->GetElement("max_grip_count");
-    if (!maxGripCountElem.get()){
+    if (!maxGripCountElem){
         std::cout<<"GazeboGraspFix: Using  "<<DEFAULT_MAX_GRIP_COUNT<<" because no <max_grip_count> element specified."<<std::endl;
         this->maxGripCount = DEFAULT_MAX_GRIP_COUNT;
     } else {
@@ -108,7 +111,7 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     }
 
     sdf::ElementPtr gripCountThresholdElem = _sdf->GetElement("grip_count_threshold");
-    if (!gripCountThresholdElem.get()){
+    if (!gripCountThresholdElem){
         this->gripCountThreshold=floor(this->maxGripCount/2.0);
         std::cout<<"GazeboGraspFix: Using  "<<this->gripCountThreshold<<" because no <grip_count_threshold> element specified."<<std::endl;
     } else {
@@ -117,7 +120,7 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     }
 
     sdf::ElementPtr releaseToleranceElem = _sdf->GetElement("release_tolerance");
-    if (!releaseToleranceElem.get()){
+    if (!releaseToleranceElem){
         std::cout<<"GazeboGraspFix: Using  "<<DEFAULT_RELEASE_TOLERANCE<<" because no <release_tolerance> element specified."<<std::endl;
         this->releaseTolerance = DEFAULT_RELEASE_TOLERANCE;
     } else {
@@ -129,7 +132,7 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     std::vector<std::string> collisionNames;
     
     sdf::ElementPtr armElem=_sdf->GetElement("arm");
-    if (!armElem.get())
+    if (!armElem)
     {
         gzerr <<"GazeboGraspFix: Cannot load the GazeboGraspFix without any <arm> declarations"<<std::endl;
         return;
@@ -141,7 +144,7 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
         sdf::ElementPtr handLinkElem = armElem->GetElement("palm_link");
         sdf::ElementPtr fingerLinkElem = armElem->GetElement("gripper_link");
 
-        if (!handLinkElem.get() || !fingerLinkElem.get() || !armNameElem.get()) {
+        if (!handLinkElem || !fingerLinkElem || !armNameElem) {
             gzerr << "ERROR: GazeboGraspFix: Cannot use a GazeboGraspFix arm because "
                   << "not all of <arm_name>, <palm_link> and <gripper_link> elements specified in URDF/SDF. Skipping."<<std::endl;
             continue;
@@ -203,7 +206,7 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     contactManager->PublishContacts(); //XXX not sure I need this?
 
     std::string topic = contactManager->CreateFilter(model->GetScopedName(), collisionNames);
-    if (!this->contactSub.get()) {
+    if (!this->contactSub) {
         std::cout<<"Subscribing contact manager to topic "<<topic<<std::endl;
         bool latching=false;
         this->contactSub = this->node->Subscribe(topic,&GazeboGraspFix::OnContact, this, latching);
