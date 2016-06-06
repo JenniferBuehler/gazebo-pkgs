@@ -35,11 +35,11 @@ find_package(gazebo REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
   LIBRARIES gazebo_state_plugins gazebo_map_publisher
   CATKIN_DEPENDS geometry_msgs roscpp shape_msgs std_msgs gazebo_world_plugin_loader
         gazebo_ros object_msgs object_msgs_tools eigen_conversions
-#  DEPENDS system_lib
+  DEPENDS gazebo
 )
 
 ###########
@@ -103,18 +103,24 @@ target_link_libraries(gazebo_request_object_info
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS gazebo_state_plugins gazebo_state_plugins_node
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(TARGETS gazebo_object_info gazebo_map_publisher gazebo_request_object_info
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+install(DIRECTORY include/${PROJECT_NAME}/
+   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+   FILES_MATCHING PATTERN "*.h"
+)
+
+
+install(DIRECTORY launch 
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  FILES_MATCHING PATTERN "*.launch"
+)
+
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
