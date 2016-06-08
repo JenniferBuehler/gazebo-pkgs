@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>gazebo_test_tools</name>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <description>
       Tools to help testing and tutorials
       with Gazebo. For example, a helper which

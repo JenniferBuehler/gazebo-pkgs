@@ -2,8 +2,8 @@
 Changelog for package gazebo_grasp_plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.1 (2016-06-08)
+------------------
 * Fixed cmake files for jenkins builds
 * Contributors: Jennifer Buehler
 
