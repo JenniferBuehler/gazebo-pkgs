@@ -12,6 +12,7 @@ find_package(
   roscpp
   shape_msgs
   std_msgs
+  nav_msgs
   gazebo_ros
   object_msgs
   object_msgs_tools
@@ -37,7 +38,7 @@ find_package(gazebo REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES gazebo_state_plugins gazebo_map_publisher
-  CATKIN_DEPENDS geometry_msgs roscpp shape_msgs std_msgs gazebo_world_plugin_loader
+  CATKIN_DEPENDS geometry_msgs roscpp shape_msgs std_msgs nav_msgs gazebo_world_plugin_loader
         gazebo_ros object_msgs object_msgs_tools eigen_conversions
   DEPENDS gazebo
 )

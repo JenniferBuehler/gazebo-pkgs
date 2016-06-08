@@ -3,8 +3,6 @@
 #include <gazebo/physics/World.hh>
 #include <gazebo/physics/PhysicsIface.hh>
 
-#include <pluginlib/class_list_macros.h>
-
 using gazebo::GazeboPluginLoader;
 
 GZ_REGISTER_SYSTEM_PLUGIN(GazeboPluginLoader)
@@ -17,7 +15,6 @@ GazeboPluginLoader::GazeboPluginLoader() :
 
 void GazeboPluginLoader::Load(int argc, char ** argv){
 }
-
 
 void GazeboPluginLoader::onWorldCreate(){
     ROS_INFO("On-World-Create: Reading list of Gazebo world plugins to be loaded from parameters...");
