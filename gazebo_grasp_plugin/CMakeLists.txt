@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(gazebo_grasp_plugin)
 
+add_definitions(-std=c++11)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -31,7 +33,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES gazebo_grasp_fix
   CATKIN_DEPENDS gazebo_ros geometry_msgs roscpp std_msgs
-  DEPENDS gazebo 
+  DEPENDS gazebo
 )
 
 ###########
@@ -62,8 +64,8 @@ add_dependencies(gazebo_grasp_fix ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 
-target_link_libraries(gazebo_grasp_fix 
-	${GAZEBO_LIBRARIES} 
+target_link_libraries(gazebo_grasp_fix
+	${GAZEBO_LIBRARIES}
 	${Boost_LIBRARIES}
 )
 
