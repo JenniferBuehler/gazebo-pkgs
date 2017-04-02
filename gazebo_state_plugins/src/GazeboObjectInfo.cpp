@@ -150,7 +150,7 @@ shape_msgs::SolidPrimitive * GazeboObjectInfo::getSolidPrimitive(physics::Collis
     }else{
         ROS_WARN("shape type %i of collision %s not supported. Using bounding box instead. ", c->GetShapeType(),c->GetName().c_str());
         math::Box box=c->GetBoundingBox();
-        math::Vector3 bb (box.GetXLength(),box.GetXLength(),box.GetXLength());
+        math::Vector3 bb (box.GetXLength(),box.GetYLength(),box.GetZLength());
         if ((bb.x < 1e-05) || (bb.y < 1e-05) || (bb.z < 1e-05)){
             ROS_WARN_ONCE("Skipping coll %s because its bounding box is flat",c->GetName().c_str());
             return NULL;
