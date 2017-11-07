@@ -31,12 +31,23 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES gazebo_grasp_fix
   CATKIN_DEPENDS gazebo_ros geometry_msgs roscpp std_msgs
-  DEPENDS gazebo 
+  DEPENDS gazebo_ros
 )
 
 ###########
 ## Build ##
 ###########
+# check c++11 / c++0x
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "-std=c++11")
+elseif(COMPILER_SUPPORTS_CXX0X)
+    set(CMAKE_CXX_FLAGS "-std=c++0x")
+else()
+    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler. Suggested solution: update the pkg build-essential ")
+endif()
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
