@@ -64,7 +64,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES gazebo_test_tools
   CATKIN_DEPENDS object_msgs gazebo_ros geometry_msgs roscpp std_msgs message_runtime
-  DEPENDS gazebo 
+  DEPENDS gazebo_ros
 )
 
 ###########
