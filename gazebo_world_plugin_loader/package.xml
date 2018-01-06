@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>gazebo_world_plugin_loader</name>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
   <description>
       Offers a *system* plugin which can be
       used to load other *world* plugins after the world has been
