@@ -2,9 +2,9 @@
 Changelog for package gazebo_test_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
-* Merge branch 'jacknlliu-fix-c11-error'
+1.0.2 (2018-01-06)
+------------------
+* Merge branch jacknlliu-fix-c11-error
 * fix build error with c++ 11
 * Contributors: Jack Liu, Jennifer Buehler
 
