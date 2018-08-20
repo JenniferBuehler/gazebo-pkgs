@@ -10,6 +10,14 @@
 
 using gazebo::GazeboGraspGripper;
 
+#if GAZEBO_MAJOR_VERSION >= 8
+namespace gz_math = ignition::math;
+#define gz_math_Pose3d ignition::math::Pose3d
+#else
+namespace gz_math = gazebo::math;
+#define gz_math_Pose3d gazebo::math::Pose
+#endif
+
 #define DEFAULT_FORCES_ANGLE_TOLERANCE 120
 #define DEFAULT_UPDATE_RATE 5
 #define DEFAULT_MAX_GRIP_COUNT 10    
@@ -50,7 +58,12 @@ bool GazeboGraspGripper::Init(physics::ModelPtr& _model,
     this->attached = false;
     this->disableCollisionsOnAttach = _disableCollisionsOnAttach;
     this->model = _model;
+
+#if GAZEBO_MAJOR_VERSION >= 8
+    physics::PhysicsEnginePtr physics = this->model->GetWorld()->Physics();
+#else
     physics::PhysicsEnginePtr physics = this->model->GetWorld()->GetPhysicsEngine();
+#endif
     this->fixedJoint = physics->CreateJoint("revolute");
 
     this->palmLink = this->model->GetLink(palmLinkName);
@@ -143,16 +156,32 @@ bool GazeboGraspGripper::HandleAttach(const std::string& objName)
     gazebo::math::Pose diff = obj->GetLink()->GetWorldPose() - this->palmLink->GetWorldPose();
     this->palmLink->AttachStaticModel(obj,diff);
 #else
+
+
+#if GAZEBO_MAJOR_VERSION >= 8
+    physics::CollisionPtr obj = boost::dynamic_pointer_cast<physics::Collision>(world->EntityByName(objName));
+#else
     physics::CollisionPtr obj = boost::dynamic_pointer_cast<physics::Collision>(world->GetEntity(objName));
+#endif /* GAZEBO_MAJOR_VERSION */
     if (!obj.get()){
         std::cerr<<"ERROR: Object "<<objName<<" not found in world, can't attach it"<<std::endl;
         return false;
     }
-    gazebo::math::Pose diff = obj->GetLink()->GetWorldPose() - this->palmLink->GetWorldPose();
+
+#if GAZEBO_MAJOR_VERSION >= 8
+    gz_math_Pose3d diff = obj->GetLink()->WorldPose() - this->palmLink->WorldPose();
+    this->fixedJoint->Load(this->palmLink,obj->GetLink(), diff);
+    this->fixedJoint->Init();
+    this->fixedJoint->SetUpperLimit(0, 0);
+    this->fixedJoint->SetLowerLimit(0, 0);
+#else
+    gz_math_Pose3d diff = obj->GetLink()->GetWorldPose() - this->palmLink->GetWorldPose();
     this->fixedJoint->Load(this->palmLink,obj->GetLink(), diff);
     this->fixedJoint->Init();
     this->fixedJoint->SetHighStop(0, 0);
     this->fixedJoint->SetLowStop(0, 0);
+
+#endif /* GAZEBO_MAJOR_VERSION */
     if (this->disableCollisionsOnAttach) {
         // we can disable collisions of the grasped object, because when the fingers keep colliding with
         // it, the fingers keep wobbling, which can create difficulties when moving the arm. 
@@ -180,7 +209,12 @@ void GazeboGraspGripper::HandleDetach(const std::string& objName)
     }
     this->palmLink->DetachStaticModel(objName);
 #else
+
+#if GAZEBO_MAJOR_VERSION >= 8
+    physics::CollisionPtr obj = boost::dynamic_pointer_cast<physics::Collision>(world->EntityByName(objName));
+#else
     physics::CollisionPtr obj = boost::dynamic_pointer_cast<physics::Collision>(world->GetEntity(objName));
+#endif
     if (!obj.get()){
         std::cerr<<"ERROR: Object "<<objName<<" not found in world, can't attach it"<<std::endl;
         return;

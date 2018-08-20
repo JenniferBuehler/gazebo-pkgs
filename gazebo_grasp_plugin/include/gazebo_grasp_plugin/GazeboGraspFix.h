@@ -10,6 +10,20 @@
 #include <gazebo_grasp_plugin/GazeboGraspGripper.h>
 // #include <gazebo_grasp_plugin/CollidingPoint.h>
 
+#if GAZEBO_MAJOR_VERSION >= 8
+namespace gz_math = ignition::math;
+#define gz_math_Vector3d ignition::math::Vector3d
+#define gz_math_Pose3d ignition::math::Pose3d
+#define gz_math_Matrix4d ignition::math::Matrix4d
+#define gz_math_Matrix3d ignition::math::Matrix3d
+#else
+namespace gz_math = gazebo::math;
+#define gz_math_Vector3d gazebo::math::Vector3
+#define gz_math_Pose3d gazebo::math::Pose
+#define gz_math_Matrix4d gazebo::math::Matrix4
+#define gz_math_Matrix3d gazebo::math::Matrix3
+#endif
+
 namespace gazebo {
 
 /**
@@ -153,7 +167,8 @@ private:
      * than minAngleDiff (in rad), and one is at least
      * lengthRatio (0..1) of the other in it's length.
      */
-    bool checkGrip(const std::vector<math::Vector3>& forces, float minAngleDiff, float lengthRatio);
+
+    bool checkGrip(const std::vector<gz_math_Vector3d>& forces, float minAngleDiff, float lengthRatio);
 
     bool isGripperLink(const std::string& linkName, std::string& gripperName) const;   
 

@@ -19,6 +19,20 @@
 
 using gazebo::GazeboObjectInfo;
 
+#if GAZEBO_MAJOR_VERSION >= 8
+namespace gz_math = ignition::math;
+#define gz_math_Vector3d ignition::math::Vector3d
+#define gz_math_Pose3d ignition::math::Pose3d
+#define gz_math_Matrix4d ignition::math::Matrix4d
+#define gz_math_Matrix3d ignition::math::Matrix3d
+#else
+namespace gz_math = gazebo::math;
+#define gz_math_Vector3d gazebo::math::Vector3
+#define gz_math_Pose3d gazebo::math::Pose
+#define gz_math_Matrix4d gazebo::math::Matrix4
+#define gz_math_Matrix3d gazebo::math::Matrix3
+#endif
+
 GZ_REGISTER_WORLD_PLUGIN(GazeboObjectInfo)
 
 GazeboObjectInfo::GazeboObjectInfo() : 
@@ -57,7 +71,11 @@ void GazeboObjectInfo::Load(physics::WorldPtr _world, sdf::ElementPtr _sdf){
 bool GazeboObjectInfo::requestObject(object_msgs::ObjectInfo::Request &req, object_msgs::ObjectInfo::Response &res) {
 
     std::string modelName=req.name;
+#if GAZEBO_MAJOR_VERSION >= 8
+    physics::ModelPtr model=world->ModelByName(modelName);
+#else
     physics::ModelPtr model=world->GetModel(modelName);
+#endif
 
     if (!model.get()) {
         // ROS_ERROR("Model %s not found",modelName.c_str());
@@ -89,7 +107,11 @@ void GazeboObjectInfo::onWorldUpdate() {
 
     if (!reGenerateObjects) return;
 
+#if GAZEBO_MAJOR_VERSION >= 8
+    physics::Model_V models=world->Models();
+#else
     physics::Model_V models=world->GetModels();
+#endif
     physics::Model_V::iterator m_it;
 
     bool send_shape=false;
@@ -116,7 +138,20 @@ shape_msgs::SolidPrimitive * GazeboObjectInfo::getSolidPrimitive(physics::Collis
             ROS_ERROR("Dynamic cast failed for box shape");
             return NULL;
         }
-        math::Vector3 bb=box->GetSize();
+
+#if GAZEBO_MAJOR_VERSION >= 8
+        gz_math_Vector3d bb=box->Size();
+        if ((bb.X() < 1e-05) || (bb.Y() < 1e-05) || (bb.Z() < 1e-05)){
+            ROS_WARN_ONCE("Skipping coll %s because its bounding box is flat",c->GetName().c_str());
+            return NULL;
+        }
+        solid.type=shape_msgs::SolidPrimitive::BOX;
+        solid.dimensions.resize(3);
+        solid.dimensions[shape_msgs::SolidPrimitive::BOX_X]=bb.X();
+        solid.dimensions[shape_msgs::SolidPrimitive::BOX_Y]=bb.Y();
+        solid.dimensions[shape_msgs::SolidPrimitive::BOX_Z]=bb.Z();
+#else
+        gz_math_Vector3d bb=box->GetSize();
         if ((bb.x < 1e-05) || (bb.y < 1e-05) || (bb.z < 1e-05)){
             ROS_WARN_ONCE("Skipping coll %s because its bounding box is flat",c->GetName().c_str());
             return NULL;
@@ -126,6 +161,7 @@ shape_msgs::SolidPrimitive * GazeboObjectInfo::getSolidPrimitive(physics::Collis
         solid.dimensions[shape_msgs::SolidPrimitive::BOX_X]=bb.x;
         solid.dimensions[shape_msgs::SolidPrimitive::BOX_Y]=bb.y;
         solid.dimensions[shape_msgs::SolidPrimitive::BOX_Z]=bb.z;
+#endif
     }/*else if (geom.has_cylinder()) {
         ROS_INFO("shape type %i of collision %s is a cylinder! ", c->GetShapeType(), c->GetName().c_str());
         const gazebo::physics::CylinderShape * cyl=dynamic_cast<const physics::CylinderShape*>(shape.get());
@@ -149,6 +185,20 @@ shape_msgs::SolidPrimitive * GazeboObjectInfo::getSolidPrimitive(physics::Collis
         solid.dimensions[shape_msgs::SolidPrimitive::SPHERE_RADIUS]=sp->GetRadius();
     }else{
         ROS_WARN("shape type %i of collision %s not supported. Using bounding box instead. ", c->GetShapeType(),c->GetName().c_str());
+
+#if GAZEBO_MAJOR_VERSION >= 8
+        gz_math::Box box=c->BoundingBox();
+        gz_math_Vector3d bb (box.XLength(),box.YLength(),box.ZLength());
+        if ((bb.X() < 1e-05) || (bb.Y() < 1e-05) || (bb.Z() < 1e-05)){
+            ROS_WARN_ONCE("Skipping coll %s because its bounding box is flat",c->GetName().c_str());
+            return NULL;
+        }
+        solid.type=shape_msgs::SolidPrimitive::BOX;
+        solid.dimensions.resize(3);
+        solid.dimensions[shape_msgs::SolidPrimitive::BOX_X]=bb.X();
+        solid.dimensions[shape_msgs::SolidPrimitive::BOX_Y]=bb.Y();
+        solid.dimensions[shape_msgs::SolidPrimitive::BOX_Z]=bb.Z();
+#else
         math::Box box=c->GetBoundingBox();
         math::Vector3 bb (box.GetXLength(),box.GetYLength(),box.GetZLength());
         if ((bb.x < 1e-05) || (bb.y < 1e-05) || (bb.z < 1e-05)){
@@ -160,6 +210,7 @@ shape_msgs::SolidPrimitive * GazeboObjectInfo::getSolidPrimitive(physics::Collis
         solid.dimensions[shape_msgs::SolidPrimitive::BOX_X]=bb.x;
         solid.dimensions[shape_msgs::SolidPrimitive::BOX_Y]=bb.y;
         solid.dimensions[shape_msgs::SolidPrimitive::BOX_Z]=bb.z;
+#endif
     }
     //ROS_INFO_STREAM("Solid computed."<<std::endl<<solid);
     return new shape_msgs::SolidPrimitive(solid);
@@ -184,8 +235,12 @@ GazeboObjectInfo::ObjectMsg GazeboObjectInfo::createBoundingBoxObject(physics::M
         physics::LinkPtr link=*l_it;
         
         std::string linkName=link->GetName();
-        
-        math::Pose link_pose=link->GetWorldPose();
+
+#if GAZEBO_MAJOR_VERSION >= 8
+        gz_math_Pose3d link_pose=link->WorldPose();
+#else
+        gz_math_Pose3d link_pose=link->GetWorldPose();
+#endif
         //ROS_INFO("Link for model %s: %s, pos %f %f %f",model->GetName().c_str(),link->GetName().c_str(),link_pose.pos.x,link_pose.pos.y,link_pose.pos.z);
         //ROS_INFO("Link found for model %s: %s",model->GetName().c_str(),link->GetName().c_str());
 
@@ -194,15 +249,30 @@ GazeboObjectInfo::ObjectMsg GazeboObjectInfo::createBoundingBoxObject(physics::M
         for (cit=colls.begin(); cit!=colls.end(); ++cit)
         {
             physics::CollisionPtr c=*cit;
-            
-            math::Pose rel_pose=c->GetRelativePose();
+
+#if GAZEBO_MAJOR_VERSION >= 8
+            gz_math_Pose3d rel_pose=c->RelativePose();
+#else
+            gz_math_Pose3d rel_pose=c->GetRelativePose();
+#endif
 
             //ROS_INFO("Collision for model %s: %s, pos %f %f %f",model->GetName().c_str(),link->GetName().c_str(),rel_pose.pos.x,rel_pose.pos.y,rel_pose.pos.z);
             //math::Pose w_pose=c->GetWorldPose();
             //ROS_INFO("World pos for model %s: %s, pos %f %f %f",model->GetName().c_str(),link->GetName().c_str(),w_pose.pos.x,w_pose.pos.y,w_pose.pos.z);
 
-            math::Pose coll_pose=rel_pose+link_pose; //XXX c->GetWorldPose() does not work for non-static objects, so it has to be relative pose and link world pose
+            gz_math_Pose3d coll_pose=rel_pose+link_pose; //XXX c->GetWorldPose() does not work for non-static objects, so it has to be relative pose and link world pose
             geometry_msgs::Pose pose;
+
+#if GAZEBO_MAJOR_VERSION >= 8
+
+            pose.position.x=coll_pose.Pos().X();
+            pose.position.y=coll_pose.Pos().Y();
+            pose.position.z=coll_pose.Pos().Z();
+            pose.orientation.x=coll_pose.Rot().X();
+            pose.orientation.y=coll_pose.Rot().Y();
+            pose.orientation.z=coll_pose.Rot().Z();
+            pose.orientation.w=coll_pose.Rot().W();
+#else
             pose.position.x=coll_pose.pos.x;
             pose.position.y=coll_pose.pos.y;
             pose.position.z=coll_pose.pos.z;
@@ -210,6 +280,8 @@ GazeboObjectInfo::ObjectMsg GazeboObjectInfo::createBoundingBoxObject(physics::M
             pose.orientation.y=coll_pose.rot.y;
             pose.orientation.z=coll_pose.rot.z;
             pose.orientation.w=coll_pose.rot.w;
+
+#endif
 
             obj.primitive_poses.push_back(pose);
         

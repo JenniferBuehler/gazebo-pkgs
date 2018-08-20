@@ -7,6 +7,7 @@ project(gazebo_grasp_plugin)
 find_package(catkin REQUIRED COMPONENTS
   gazebo_ros
   geometry_msgs
+  object_msgs
   roscpp
   std_msgs
 )

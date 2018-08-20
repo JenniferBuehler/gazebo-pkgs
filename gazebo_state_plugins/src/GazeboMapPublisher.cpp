@@ -34,6 +34,20 @@
 
 using gazebo::GazeboMapPublisher;
 
+#if GAZEBO_MAJOR_VERSION >= 8
+namespace gz_math = ignition::math;
+#define gz_math_Vector3d ignition::math::Vector3d
+#define gz_math_Pose3d ignition::math::Pose3d
+#define gz_math_Matrix4d ignition::math::Matrix4d
+#define gz_math_Matrix3d ignition::math::Matrix3d
+#else
+namespace gz_math = gazebo::math;
+#define gz_math_Vector3d gazebo::math::Vector3
+#define gz_math_Pose3d gazebo::math::Pose
+#define gz_math_Matrix4d gazebo::math::Matrix4
+#define gz_math_Matrix3d gazebo::math::Matrix3
+#endif
+
 GZ_REGISTER_WORLD_PLUGIN(GazeboMapPublisher)
 
 class GazeboMapPublisher::CollisionMapRequest {
@@ -187,11 +201,20 @@ bool GazeboMapPublisher::createMap(const CollisionMapRequest &msg, const std::st
 
     double dist;
     std::string entityName;
-    math::Vector3 start, end;
+    gz_math_Vector3d start, end;
+
+#if GAZEBO_MAJOR_VERSION >= 8
+    start.Z() = msg.height;
+    end.Z() = 0.001;
+
+    gazebo::physics::PhysicsEnginePtr engine = world->Physics();
+#else
     start.z = msg.height;
     end.z = 0.001;
 
     gazebo::physics::PhysicsEnginePtr engine = world->GetPhysicsEngine();
+
+#endif
     engine->InitForThread();
     //gazebo::physics::RayShapePtr ray = boost::shared_dynamic_cast<gazebo::physics::RayShape>(
     gazebo::physics::RayShapePtr ray = boost::dynamic_pointer_cast<gazebo::physics::RayShape>(
@@ -208,8 +231,15 @@ bool GazeboMapPublisher::createMap(const CollisionMapRequest &msg, const std::st
             x += dX_horizontal;
             y += dY_horizontal;
 
+#if GAZEBO_MAJOR_VERSION >= 8
+            start.X(x);
+            end.X(x);
+            start.Y(y);
+            end.Y(y);
+#else
             start.x = end.x= x;
             start.y = end.y = y;
+#endif
             ray->SetPoints(start, end);
             ray->GetIntersection(dist, entityName);
             if (!entityName.empty()) {
