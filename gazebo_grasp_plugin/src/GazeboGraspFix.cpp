@@ -421,7 +421,7 @@ void GazeboGraspFix::OnUpdate() {
         // std::cout<<"Number applied forces on "<<objName<<": "<<objContInfo.appliedForces.size()<<std::endl;
         
         float minAngleDiff= this->forcesAngleTolerance; //120 * M_PI/180;
-        if (!checkGrip(objContInfo.appliedForces, minAngleDiff, 0.3)) 
+        if (!checkGrip(objContInfo.appliedForces, minAngleDiff, 0.3))
             continue;
         
         // add to "gripped objects" 
@@ -668,6 +668,10 @@ bool GazeboGraspFix::checkGrip(const std::vector<gz_math_Vector3d>& forces, floa
     if (((lengthRatio > 1) || (lengthRatio < 0)) && (lengthRatio > 1e-04 && (fabs(lengthRatio-1) > 1e-04)))  {
         std::cerr<<"ERROR: checkGrip: always specify a lengthRatio of [0..1]"<<std::endl;
         return false;
+    }
+    if (minAngleDiff == 0) {
+        // ignore the force angle
+        return true;
     }
     if (minAngleDiff < M_PI_2){
         std::cerr<<"ERROR: checkGrip: min angle must be at least 90 degrees (PI/2)"<<std::endl;
