@@ -12,7 +12,7 @@
 
 #if GAZEBO_MAJOR_VERSION >= 8
 namespace gz_math = ignition::math;
-#define gz_math_Vector3d ignition::math::Vector3d
+typedef  ignition::math::Vector3d GzVector3d;
 #define gz_math_Pose3d ignition::math::Pose3d
 #define gz_math_Matrix4d ignition::math::Matrix4d
 #define gz_math_Matrix3d ignition::math::Matrix3d
