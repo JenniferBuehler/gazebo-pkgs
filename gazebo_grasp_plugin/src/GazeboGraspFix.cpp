@@ -568,7 +568,17 @@ void GazeboGraspFix::OnUpdate() {
            
             // get current world pose of object
 #if GAZEBO_MAJOR_VERSION >= 8
-            gz_math_Pose3d currObjWorldPose=cpInfo.collObj->GetLink()->WorldPose();
+            GzPose3d currObjWorldPose = GetPose(cpInfo.collObj->GetLink());
+            
+            ///... and the getter function
+            GzPose3d GetPose(const LinkPtr link)
+            {
+            #if GAZEBO_MAJOR_VERSION >= 8
+              return link->WorldPose();
+            #else 
+             return link->GetWorldPose();
+            #endif 
+             }
 
             // get world pose of link
             gz_math_Pose3d currLinkWorldPose=cpInfo.collLink->GetLink()->WorldPose();
