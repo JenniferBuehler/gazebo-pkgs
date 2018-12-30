@@ -12,7 +12,7 @@ using gazebo::GazeboGraspGripper;
 
 #if GAZEBO_MAJOR_VERSION >= 8
 namespace gz_math = ignition::math;
-#define gz_math_Pose3d ignition::math::Pose3d
+typedef  ignition::math::Pose3d GzPose3d;
 #else
 namespace gz_math = gazebo::math;
 #define gz_math_Pose3d gazebo::math::Pose
