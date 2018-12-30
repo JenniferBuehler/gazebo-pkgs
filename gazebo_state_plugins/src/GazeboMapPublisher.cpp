@@ -213,7 +213,6 @@ bool GazeboMapPublisher::createMap(const CollisionMapRequest &msg, const std::st
     end.z = 0.001;
 
     gazebo::physics::PhysicsEnginePtr engine = world->GetPhysicsEngine();
-
 #endif
     engine->InitForThread();
     //gazebo::physics::RayShapePtr ray = boost::shared_dynamic_cast<gazebo::physics::RayShape>(
