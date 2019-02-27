@@ -1,4 +1,5 @@
 #include <gazebo_state_plugins/GazeboMapPublisher.h>
+#include <gazebo_version_helpers/GazeboVersionHelpers.h>
 
 #include <gazebo/physics/physics.hh>
 
@@ -33,6 +34,7 @@
 #define MAX_MAP_VAL 100 
 
 using gazebo::GazeboMapPublisher;
+using gazebo::GzVector3;
 
 GZ_REGISTER_WORLD_PLUGIN(GazeboMapPublisher)
 
@@ -187,11 +189,10 @@ bool GazeboMapPublisher::createMap(const CollisionMapRequest &msg, const std::st
 
     double dist;
     std::string entityName;
-    math::Vector3 start, end;
-    start.z = msg.height;
-    end.z = 0.001;
+    GzVector3 start = gazebo::GetVector(0, 0, msg.height);
+    GzVector3 end = gazebo::GetVector(0, 0, 0.001);
 
-    gazebo::physics::PhysicsEnginePtr engine = world->GetPhysicsEngine();
+    gazebo::physics::PhysicsEnginePtr engine = gazebo::GetPhysics(world);
     engine->InitForThread();
     //gazebo::physics::RayShapePtr ray = boost::shared_dynamic_cast<gazebo::physics::RayShape>(
     gazebo::physics::RayShapePtr ray = boost::dynamic_pointer_cast<gazebo::physics::RayShape>(
@@ -208,8 +209,10 @@ bool GazeboMapPublisher::createMap(const CollisionMapRequest &msg, const std::st
             x += dX_horizontal;
             y += dY_horizontal;
 
-            start.x = end.x= x;
-            start.y = end.y = y;
+            gazebo::SetX(start, x);
+            gazebo::SetX(end, x);
+            gazebo::SetY(start, y);
+            gazebo::SetY(end, y);
             ray->SetPoints(start, end);
             ray->GetIntersection(dist, entityName);
             if (!entityName.empty()) {

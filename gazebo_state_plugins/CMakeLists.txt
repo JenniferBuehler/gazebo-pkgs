@@ -8,6 +8,7 @@ find_package(
   catkin 
   REQUIRED COMPONENTS
   gazebo_world_plugin_loader
+  gazebo_version_helpers
   geometry_msgs
   roscpp
   shape_msgs

@@ -8,7 +8,6 @@
 #include <gazebo/transport/TransportTypes.hh>
 #include <stdio.h>
 #include <gazebo_grasp_plugin/GazeboGraspGripper.h>
-// #include <gazebo_grasp_plugin/CollidingPoint.h>
 
 namespace gazebo
 {
@@ -114,8 +113,8 @@ class GazeboGraspFix : public ModelPlugin
     /**
      * Collects for each object all forces which are currently applied on it.
      * Then, for each object, checks whether of all the forces applied,
-     * there are opposing forces. This is done by calling CheckGrip() with the
-     * list of all forces applied.
+     * there are opposing forces.
+     * This is done by calling CheckGrip() with the list of all forces applied.
      * If CheckGrip() returns true, the number of "grip counts"
      * is increased for the holding arm (but grip counts will never exceed \e max_grip_count).
      * If the number of grip counts for this object exceeds \e grip_count_threshold,
@@ -152,13 +151,8 @@ class GazeboGraspFix : public ModelPlugin
      */
     void OnContact(const ConstContactsPtr &ptr);
 
-    /**
-     * Checks whether any two vectors in the set have an angle greater
-     * than minAngleDiff (in rad), and one is at least
-     * lengthRatio (0..1) of the other in it's length.
-     */
-    bool CheckGrip(const std::vector<math::Vector3> &forces, float minAngleDiff,
-                   float lengthRatio);
+//    bool CheckGrip(const std::vector<GzVector3> &forces, float minAngleDiff,
+//                   float lengthRatio);
 
     bool IsGripperLink(const std::string &linkName, std::string &gripperName) const;
 
