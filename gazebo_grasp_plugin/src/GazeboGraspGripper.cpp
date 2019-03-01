@@ -251,7 +251,7 @@ void GazeboGraspGripper::HandleDetach(const std::string &objName)
   if (obj && obj->GetLink())
   {
     auto linVel = GetWorldVelocity(obj->GetLink());
-    gzmsg << "PRE-DETACH Velocity for link " << obj->GetLink()->GetName()
+    gzmsg << "POST-DETACH Velocity for link " << obj->GetLink()->GetName()
           << " (collision name " << objName << "): " << linVel
           << ", absolute val " << GetLength(linVel) << std::endl;
 
