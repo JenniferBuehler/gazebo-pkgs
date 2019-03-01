@@ -7,9 +7,10 @@
 #include <stdio.h>
 
 #include <gazebo_grasp_plugin/GazeboGraspFix.h>
+#include <gazebo_version_helpers/GazeboVersionHelpers.h>
 
 using gazebo::GazeboGraspFix;
-
+using gazebo::GzVector3;
 
 #define DEFAULT_FORCES_ANGLE_TOLERANCE 120
 #define DEFAULT_UPDATE_RATE 5
@@ -255,10 +256,10 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 
   // ++++++++++++ start up things +++++++++++++++
 
-  physics::PhysicsEnginePtr physics = this->world->GetPhysicsEngine();
-  this->node->Init(this->world->GetName());
+  physics::PhysicsEnginePtr physics = GetPhysics(this->world);
+  this->node->Init(gazebo::GetName(*(this->world)));
   physics::ContactManager *contactManager = physics->GetContactManager();
-  contactManager->PublishContacts(); //XXX not sure I need this?
+  contactManager->PublishContacts();  // TODO not sure this is required?
 
   std::string topic = contactManager->CreateFilter(model->GetScopedName(),
                       collisionNames);
@@ -280,7 +281,7 @@ class GazeboGraspFix::ObjectContactInfo
   public:
 
     // all forces effecting on the object
-    std::vector<gazebo::math::Vector3> appliedForces;
+    std::vector<GzVector3> appliedForces;
 
     // all grippers involved in the process, along with
     // a number counting the number of contact points with the
@@ -404,21 +405,86 @@ class GazeboGraspFix::CollidingPoint
     physics::CollisionPtr collLink, collObj;
 
     // average force vector of the colliding point
-    gazebo::math::Vector3 force;
+    GzVector3 force;
 
     // position (relative to reference frame of gripper
     // collision surface) where the contact happens on collision surface
-    gazebo::math::Vector3 pos;
+    GzVector3 pos;
 
     // position (relative to reference frame of *gripper* collision surface)
     // where the object center is located during collision.
-    gazebo::math::Vector3 objPos;
+    GzVector3 objPos;
 
     // sum of force and pose (they are actually summed
     // up from several contact points).
     // Divide both \e force and \e pos by this to obtain average
     int sum;
 };
+
+////////////////////////////////////////////////////////////////////////////////
+double AngularDistance(const GzVector3 &_v1,
+                       const GzVector3 &_v2)
+{
+  GzVector3 v1 = _v1;
+  GzVector3 v2 = _v2;
+  v1.Normalize();
+  v2.Normalize();
+  return acos(v1.Dot(v2));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Checks whether any two vectors in the set have an angle greater
+// than minAngleDiff (in rad), and one is at least
+// lengthRatio (0..1) of the other in it's length.
+bool CheckGrip(const std::vector<GzVector3> &forces,
+               float minAngleDiff, float lengthRatio)
+{
+  if (((lengthRatio > 1) || (lengthRatio < 0)) && (lengthRatio > 1e-04
+      && (fabs(lengthRatio - 1) > 1e-04)))
+  {
+    std::cerr << "ERROR: CheckGrip: always specify a lengthRatio of [0..1]" <<
+              std::endl;
+    return false;
+  }
+  if (minAngleDiff < M_PI_2)
+  {
+    std::cerr << "ERROR: CheckGrip: min angle must be at least 90 degrees (PI/2)" <<
+              std::endl;
+    return false;
+  }
+  std::vector<GzVector3>::const_iterator it1, it2;
+  for (it1 = forces.begin(); it1 != forces.end(); ++it1)
+  {
+    GzVector3 v1 = *it1;
+    for (it2 = it1 + 1; it2 != forces.end(); ++it2)
+    {
+      GzVector3 v2 = *it2;
+      float l1 = gazebo::GetLength(v1);
+      float l2 = gazebo::GetLength(v2);
+      if ((l1 < 1e-04) || (l2 < 1e-04)) continue;
+      /*GzVector3 _v1=v1;
+      GzVector3 _v2=v2;
+      _v1/=l1;
+      _v2/=l2;
+      float angle=acos(_v1.Dot(_v2));*/
+      float angle = AngularDistance(v1, v2);
+      // gzmsg<<"Angular distance between v1.len="<<v1.GetLength()<<" and v2.len="<<v2.GetLength()<<": "<<angle*180/M_PI<<std::endl;
+      if (angle > minAngleDiff)
+      {
+        float ratio;
+        if (l1 > l2) ratio = l2 / l1;
+        else ratio = l1 / l2;
+        // gzmsg<<"Got angle "<<angle<<", ratio "<<ratio<<std::endl;
+        if (ratio >= lengthRatio)
+        {
+          // gzmsg<<"CheckGrip() is true"<<std::endl;
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 void GazeboGraspFix::OnUpdate()
@@ -455,7 +521,7 @@ void GazeboGraspFix::OnUpdate()
     {
       std::string linkName = lIt->first;
       CollidingPoint &collP = lIt->second;
-      gazebo::math::Vector3 avgForce = collP.force / collP.sum;
+      GzVector3 avgForce = collP.force / collP.sum;
       // gzmsg << "Found collision with "<<linkName<<": "<<avgForce.x<<", "<<avgForce.y<<", "<<avgForce.z<<" (avg over "<<collP.sum<<")"<<std::endl;
       objContInfo.appliedForces.push_back(avgForce);
       // insert the gripper (if it doesn't exist yet) and increase contact counter
@@ -657,46 +723,45 @@ void GazeboGraspFix::OnUpdate()
     {
       CollidingPoint &cpInfo = pointIt->second;
       // initial distance from link to contact point (relative to link)
-      gazebo::math::Vector3 relContactPos = cpInfo.pos / cpInfo.sum;
-      // initial distance from link to object (relative to link)
-      gazebo::math::Vector3 relObjPos = cpInfo.objPos / cpInfo.sum;
+      GzVector3 relContactPos = cpInfo.pos / cpInfo.sum;
+      // Initial distance from link to object (relative to link)
+      GzVector3 relObjPos = cpInfo.objPos / cpInfo.sum;
 
-      // get current world pose of object
-      gazebo::math::Pose currObjWorldPose = cpInfo.collObj->GetLink()->GetWorldPose();
+      // Get current world pose of object
+      GzPose3 currObjWorldPose =
+        gazebo::GetWorldPose(cpInfo.collObj->GetLink());
 
-      // get world pose of link
-      gazebo::math::Pose currLinkWorldPose =
-        cpInfo.collLink->GetLink()->GetWorldPose();
+      // Get world pose of link
+      GzPose3 currLinkWorldPose =
+        gazebo::GetWorldPose(cpInfo.collLink->GetLink());
 
       // Get transform for currLinkWorldPose as matrix
-      gazebo::math::Matrix4 worldToLink = currLinkWorldPose.rot.GetAsMatrix4();
-      worldToLink.SetTranslate(currLinkWorldPose.pos);
+      GzMatrix4 worldToLink = gazebo::GetMatrix(currLinkWorldPose);
 
       // Get the transform from collision link to contact point
-      gazebo::math::Matrix4 linkToContact = gazebo::math::Matrix4::IDENTITY;
-      linkToContact.SetTranslate(relContactPos);
+      GzMatrix4 linkToContact = gazebo::GetMatrix(relContactPos);
 
-      // the current world position of the contact point right now is:
-      gazebo::math::Matrix4 _currContactWorldPose = worldToLink * linkToContact;
-      gazebo::math::Vector3 currContactWorldPose =
-        _currContactWorldPose.GetTranslation();
+      // The current world position of the contact point right now is:
+      GzMatrix4 _currContactWorldPose = worldToLink * linkToContact;
+      GzVector3 currContactWorldPose = gazebo::GetPos(_currContactWorldPose);
 
-      // the initial contact point location on the link should still correspond
+      // The initial contact point location on the link should still correspond
       // to the initial contact point location on the object.
 
-      // initial vector from object center to contact point (relative to link,
+      // Initial vector from object center to contact point (relative to link,
       // because relObjPos and relContactPos are from center of link)
-      gazebo::math::Vector3 oldObjDist = relContactPos - relObjPos;
-      // the same vector as \e oldObjDist, but calculated by the current world pose
+      GzVector3 oldObjDist = relContactPos - relObjPos;
+      // The same vector as \e oldObjDist, but calculated by the current world pose
       // of object and the current location of the initial contact location on the link.
-      gazebo::math::Vector3 newObjDist = currContactWorldPose -
-                                         currObjWorldPose.pos; // new distance from contact to object
+      // This is the new distance from contact to object.
+      GzVector3 newObjDist = currContactWorldPose - gazebo::GetPos(currObjWorldPose);
 
       //gzmsg<<"Obj Trans "<<cpInfo.collLink->GetName()<<": "<<relObjPos.x<<", "<<relObjPos.y<<", "<<relObjPos.z<<std::endl;
       //gzmsg<<"Cont Trans "<<cpInfo.collLink->GetName()<<": "<<relContactPos.x<<", "<<relContactPos.y<<", "<<relContactPos.z<<std::endl;
 
       // the difference between these vectors should not be too large...
-      float diff = fabs(oldObjDist.GetLength() - newObjDist.GetLength());
+      float diff =
+        fabs(gazebo::GetLength(oldObjDist) - gazebo::GetLength(newObjDist));
       //gzmsg<<"Diff for link "<<cpInfo.collLink->GetName()<<": "<<diff<<std::endl;
 
       if (diff > releaseTolerance)
@@ -732,68 +797,6 @@ void GazeboGraspFix::OnUpdate()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-double angularDistance(const gazebo::math::Vector3 &_v1,
-                       const gazebo::math::Vector3 &_v2)
-{
-  gazebo::math::Vector3 v1 = _v1;
-  gazebo::math::Vector3 v2 = _v2;
-  v1.Normalize();
-  v2.Normalize();
-  return acos(v1.Dot(v2));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-bool GazeboGraspFix::CheckGrip(const std::vector<gazebo::math::Vector3> &forces,
-                               float minAngleDiff, float lengthRatio)
-{
-  if (((lengthRatio > 1) || (lengthRatio < 0)) && (lengthRatio > 1e-04
-      && (fabs(lengthRatio - 1) > 1e-04)))
-  {
-    std::cerr << "ERROR: CheckGrip: always specify a lengthRatio of [0..1]" <<
-              std::endl;
-    return false;
-  }
-  if (minAngleDiff < M_PI_2)
-  {
-    std::cerr << "ERROR: CheckGrip: min angle must be at least 90 degrees (PI/2)" <<
-              std::endl;
-    return false;
-  }
-  std::vector<gazebo::math::Vector3>::const_iterator it1, it2;
-  for (it1 = forces.begin(); it1 != forces.end(); ++it1)
-  {
-    gazebo::math::Vector3 v1 = *it1;
-    for (it2 = it1 + 1; it2 != forces.end(); ++it2)
-    {
-      gazebo::math::Vector3 v2 = *it2;
-      float l1 = v1.GetLength();
-      float l2 = v2.GetLength();
-      if ((l1 < 1e-04) || (l2 < 1e-04)) continue;
-      /*gazebo::math::Vector3 _v1=v1;
-      gazebo::math::Vector3 _v2=v2;
-      _v1/=l1;
-      _v2/=l2;
-      float angle=acos(_v1.Dot(_v2));*/
-      float angle = angularDistance(v1, v2);
-      // gzmsg<<"Angular distance between v1.len="<<v1.GetLength()<<" and v2.len="<<v2.GetLength()<<": "<<angle*180/M_PI<<std::endl;
-      if (angle > minAngleDiff)
-      {
-        float ratio;
-        if (l1 > l2) ratio = l2 / l1;
-        else ratio = l1 / l2;
-        // gzmsg<<"Got angle "<<angle<<", ratio "<<ratio<<std::endl;
-        if (ratio >= lengthRatio)
-        {
-          // gzmsg<<"CheckGrip() is true"<<std::endl;
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 void GazeboGraspFix::OnContact(const ConstContactsPtr &_msg)
 {
   //gzmsg<<"CONTACT! "<<std::endl;//<<_contact<<std::endl;
@@ -802,10 +805,10 @@ void GazeboGraspFix::OnContact(const ConstContactsPtr &_msg)
   {
     physics::CollisionPtr collision1 =
       boost::dynamic_pointer_cast<physics::Collision>(
-        this->world->GetEntity(_msg->contact(i).collision1()));
+        gazebo::GetEntityByName(this->world, _msg->contact(i).collision1()));
     physics::CollisionPtr collision2 =
       boost::dynamic_pointer_cast<physics::Collision>(
-        this->world->GetEntity(_msg->contact(i).collision2()));
+        gazebo::GetEntityByName(this->world, _msg->contact(i).collision2()));
 
     if ((collision1 && !collision1->IsStatic()) && (collision2
         && !collision2->IsStatic()))
@@ -841,7 +844,7 @@ void GazeboGraspFix::OnContact(const ConstContactsPtr &_msg)
       }
 
       // all force vectors which are part of this contact
-      std::vector<gazebo::math::Vector3> force;
+      std::vector<GzVector3> force;
 
       // find out which part of the colliding entities is the object, *not* the gripper,
       // and copy all the forces applied to it into the vector 'force'.
@@ -871,7 +874,7 @@ void GazeboGraspFix::OnContact(const ConstContactsPtr &_msg)
           force.push_back(contact.wrench[k].body2Force);
       }
 
-      gazebo::math::Vector3 avgForce;
+      GzVector3 avgForce;
       // compute average/sum of the forces applied on the object
       for (int k = 0; k < force.size(); ++k)
       {
@@ -879,53 +882,51 @@ void GazeboGraspFix::OnContact(const ConstContactsPtr &_msg)
       }
       avgForce /= force.size();
 
-      gazebo::math::Vector3 avgPos;
+      GzVector3 avgPos;
       // compute center point (average pose) of all the origin positions of the forces appied
       for (int k = 0; k < contact.count; ++k) avgPos += contact.positions[k];
       avgPos /= contact.count;
 
       // now, get average pose relative to the colliding link
-      gazebo::math::Pose linkWorldPose = linkCollision->GetLink()->GetWorldPose();
+      GzPose3 linkWorldPose = gazebo::GetWorldPose(linkCollision->GetLink());
 
       // To find out the collision point relative to the Link's local coordinate system, first get the Poses as 4x4 matrices
-      gazebo::math::Matrix4 worldToLink = linkWorldPose.rot.GetAsMatrix4();
-      worldToLink.SetTranslate(linkWorldPose.pos);
+      GzMatrix4 worldToLink = gazebo::GetMatrix(linkWorldPose);
 
-      gazebo::math::Matrix4 worldToContact = gazebo::math::Matrix4::IDENTITY;
-      //we can assume that the contact has identity rotation because we don't care about its orientation.
-      //We could always set another rotation here too.
-      worldToContact.SetTranslate(avgPos);
+      // We can assume that the contact has identity rotation because we don't care about its orientation.
+      // We could always set another rotation here too.
+      GzMatrix4 worldToContact = gazebo::GetMatrix(avgPos);
 
       // now, worldToLink * contactInLocal = worldToContact
       // hence, contactInLocal = worldToLink.Inv * worldToContact
-      gazebo::math::Matrix4 worldToLinkInv = worldToLink.Inverse();
-      gazebo::math::Matrix4 contactInLocal = worldToLinkInv * worldToContact;
-      gazebo::math::Vector3 contactPosInLocal = contactInLocal.GetTranslation();
+      GzMatrix4 worldToLinkInv = worldToLink.Inverse();
+      GzMatrix4 contactInLocal = worldToLinkInv * worldToContact;
+      GzVector3 contactPosInLocal = gazebo::GetPos(contactInLocal);
 
       //gzmsg<<"---------"<<std::endl;
       //gzmsg<<"CNT in loc: "<<contactPosInLocal.x<<","<<contactPosInLocal.y<<","<<contactPosInLocal.z<<std::endl;
 
-      /*gazebo::math::Vector3 sDiff=avgPos-linkWorldPose.pos;
+      /*GzVector3 sDiff=avgPos-linkWorldPose.pos;
       gzmsg<<"SIMPLE trans: "<<sDiff.x<<","<<sDiff.y<<","<<sDiff.z<<std::endl;
       gzmsg<<"coll world pose: "<<linkWorldPose.pos.x<<", "<<linkWorldPose.pos.y<<", "<<linkWorldPose.pos.z<<std::endl;
       gzmsg<<"contact avg pose: "<<avgPos.x<<", "<<avgPos.y<<", "<<avgPos.z<<std::endl;
 
-      gazebo::math::Vector3 lX=linkWorldPose.rot.GetXAxis();
-      gazebo::math::Vector3 lY=linkWorldPose.rot.GetYAxis();
-      gazebo::math::Vector3 lZ=linkWorldPose.rot.GetZAxis();
+      GzVector3 lX=linkWorldPose.rot.GetXAxis();
+      GzVector3 lY=linkWorldPose.rot.GetYAxis();
+      GzVector3 lZ=linkWorldPose.rot.GetZAxis();
 
       gzmsg<<"World ori: "<<linkWorldPose.rot.x<<","<<linkWorldPose.rot.y<<","<<linkWorldPose.rot.z<<","<<linkWorldPose.rot.w<<std::endl;
       gzmsg<<"x axis: "<<lX.x<<","<<lX.y<<","<<lX.z<<std::endl;
       gzmsg<<"y axis: "<<lY.x<<","<<lY.y<<","<<lY.z<<std::endl;
       gzmsg<<"z axis: "<<lZ.x<<","<<lZ.y<<","<<lZ.z<<std::endl;*/
 
-      // now, get the pose of the object and compute it's relative position to the collision surface.
-      gazebo::math::Pose objWorldPose = objCollision->GetLink()->GetWorldPose();
-      gazebo::math::Matrix4 worldToObj = objWorldPose.rot.GetAsMatrix4();
-      worldToObj.SetTranslate(objWorldPose.pos);
+      // Get the pose of the object and compute it's relative position to
+      // the collision surface.
+      GzPose3 objWorldPose = gazebo::GetWorldPose(objCollision->GetLink());
+      GzMatrix4 worldToObj = gazebo::GetMatrix(objWorldPose);
 
-      gazebo::math::Matrix4 objInLocal = worldToLinkInv * worldToObj;
-      gazebo::math::Vector3 objPosInLocal = objInLocal.GetTranslation();
+      GzMatrix4 objInLocal = worldToLinkInv * worldToObj;
+      GzVector3 objPosInLocal = gazebo::GetPos(objInLocal);
 
       {
         boost::mutex::scoped_lock lock(this->mutexContacts);
