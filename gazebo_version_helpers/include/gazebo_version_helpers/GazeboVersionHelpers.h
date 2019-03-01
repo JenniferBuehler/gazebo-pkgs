@@ -18,7 +18,7 @@ typedef gz_math::Matrix3d GzMatrix3;
 namespace gz_math = gazebo::math;
 typedef gz_math::Pose GzPose3;
 typedef gz_math::Vector3 GzVector3;
-typedef gz_math::Quaterniond GzQuaternion;
+typedef gz_math::Quaternion GzQuaternion;
 typedef gz_math::Matrix4 GzMatrix4;
 typedef gz_math::Matrix3 GzMatrix3;
 #endif
