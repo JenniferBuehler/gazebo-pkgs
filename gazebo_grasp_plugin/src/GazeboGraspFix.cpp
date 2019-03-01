@@ -554,12 +554,14 @@ void GazeboGraspFix::OnUpdate()
   
     // TODO: remove this test print, for issue #26 ------------------- 
 #if 0
-    physics::CollisionPtr objColl = boost::dynamic_pointer_cast<physics::Collision>
-                              (world->GetEntity(objName));
+    physics::CollisionPtr objColl =
+      boost::dynamic_pointer_cast<physics::Collision>(GetEntityByName(world, objName));
     if (objColl && objColl->GetLink())
     {
-      auto linVel = objColl->GetLink()->GetWorldLinearVel();
-      gzmsg << "Velocity for link " << objColl->GetLink()->GetName() << " (collision name " << objName << "): " << linVel << ", absolute val " << linVel.GetLength() << std::endl;
+      auto linVel = GetWorldVelocity(objColl->GetLink());
+      gzmsg << "Velocity for link " << objColl->GetLink()->GetName()
+        << " (collision name " << objName << "): " << linVel
+        << ", absolute val " << GetLength(linVel) << std::endl;
     }
 #endif
     // ------------------- 

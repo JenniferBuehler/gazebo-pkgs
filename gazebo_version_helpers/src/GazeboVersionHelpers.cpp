@@ -17,6 +17,17 @@ GzPose3 gazebo::GetWorldPose(const gazebo::physics::LinkPtr &link)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+GzVector3 gazebo::GetWorldVelocity(const gazebo::physics::LinkPtr &link)
+{
+#if GAZEBO_MAJOR_VERSION >= 8
+  return link->WorldLinearVel();
+#else 
+  return link->GetWorldLinearVel();
+#endif 
+}
+ 
+
+///////////////////////////////////////////////////////////////////////////////
 GzMatrix4 gazebo::GetIdentity()
 {
 #if GAZEBO_MAJOR_VERSION >= 8
