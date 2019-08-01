@@ -37,11 +37,12 @@ GazeboGraspFix::GazeboGraspFix(physics::ModelPtr _model)
 GazeboGraspFix::~GazeboGraspFix()
 {
   // Release filter to make it safe to reload the model with plugin
-  if (!filter_name.empty())
+  if (!filter_name.empty() && this->world)
   {
     physics::PhysicsEnginePtr physics = GetPhysics(this->world);
     physics::ContactManager *contactManager = physics->GetContactManager();
-    contactManager->RemoveFilter(filter_name);
+    if (contactManager)
+        contactManager->RemoveFilter(filter_name);
   }
   this->update_connection.reset();
   if (this->node) this->node->Fini();
