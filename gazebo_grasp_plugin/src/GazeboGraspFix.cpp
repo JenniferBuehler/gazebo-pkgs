@@ -36,6 +36,13 @@ GazeboGraspFix::GazeboGraspFix(physics::ModelPtr _model)
 ////////////////////////////////////////////////////////////////////////////////
 GazeboGraspFix::~GazeboGraspFix()
 {
+  // Release filter to make it safe to reload the model with plugin
+  if (!filter_name.empty())
+  {
+    physics::PhysicsEnginePtr physics = GetPhysics(this->world);
+    physics::ContactManager *contactManager = physics->GetContactManager();
+    contactManager->RemoveFilter(filter_name);
+  }
   this->update_connection.reset();
   if (this->node) this->node->Fini();
   this->node.reset();
@@ -261,7 +268,8 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   physics::ContactManager *contactManager = physics->GetContactManager();
   contactManager->PublishContacts();  // TODO not sure this is required?
 
-  std::string topic = contactManager->CreateFilter(model->GetScopedName(),
+  filter_name = model->GetScopedName();
+  std::string topic = contactManager->CreateFilter(filter_name,
                       collisionNames);
   if (!this->contactSub)
   {
