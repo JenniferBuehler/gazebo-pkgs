@@ -314,7 +314,7 @@ gazebo::physics::Model_V gazebo::GetModels(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-gazebo::GzVector3 gazebo::GetBoundingBoxDimensions(const gz_math::Box &box)
+gazebo::GzVector3 gazebo::GetBoundingBoxDimensions(const GzBox &box)
 {
 #if GAZEBO_MAJOR_VERSION >= 8
     GzVector3 bb(box.XLength(), box.YLength(), box.ZLength());
