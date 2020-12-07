@@ -314,9 +314,12 @@ gazebo::physics::Model_V gazebo::GetModels(
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-gazebo::GzVector3 gazebo::GetBoundingBoxDimensions(const gz_math::Box &box)
+gazebo::GzVector3 gazebo::GetBoundingBoxDimensions(const GzBox &box)
 {
-#if GAZEBO_MAJOR_VERSION >= 8
+#if GAZEBO_MAJOR_VERSION >= 11
+    auto const size = box.Size();
+    GzVector3 bb(size.X(), size.Y(), size.Z());
+#elif GAZEBO_MAJOR_VERSION >= 8
     GzVector3 bb(box.XLength(), box.YLength(), box.ZLength());
 #else
     GzVector3 bb(box.GetXLength(), box.GetYLength(), box.GetZLength());
