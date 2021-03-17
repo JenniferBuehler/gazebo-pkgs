@@ -6,7 +6,8 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
 #include <gazebo/transport/TransportTypes.hh>
-#include <stdio.h>
+#include <ros/ros.h>
+
 #include <gazebo_grasp_plugin/GazeboGraspGripper.h>
 
 namespace gazebo
@@ -100,12 +101,12 @@ class GazeboGraspFix : public ModelPlugin
      * Gets called just after the object has been attached to the palm link on \e armName
      */
     virtual void OnAttach(const std::string &objectName,
-                          const std::string &armName) {}
+                          const std::string &armName);
     /**
      * Gets called just after the object has been detached to the palm link on \e armName
      */
     virtual void OnDetach(const std::string &objectName,
-                          const std::string &armName) {}
+                          const std::string &armName);
 
   private:
     virtual void Init();
@@ -252,6 +253,8 @@ class GazeboGraspFix : public ModelPlugin
 
     //ContactManager filter to be removed in destructor
     std::string filter_name;
+
+    ros::Publisher events_pub;
 };
 
 }

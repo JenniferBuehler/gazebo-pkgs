@@ -4,9 +4,9 @@
 #include <gazebo/physics/ContactManager.hh>
 #include <gazebo/physics/Contact.hh>
 #include <gazebo/common/common.hh>
-#include <stdio.h>
 
 #include <gazebo_grasp_plugin/GazeboGraspFix.h>
+#include <gazebo_grasp_plugin/GazeboGraspEvent.h>
 #include <gazebo_version_helpers/GazeboVersionHelpers.h>
 
 using gazebo::GazeboGraspFix;
@@ -53,6 +53,9 @@ GazeboGraspFix::~GazeboGraspFix()
 void GazeboGraspFix::Init()
 {
   this->prevUpdateTime = common::Time::GetWallTime();
+
+  ros::NodeHandle pnh("~");
+  events_pub = pnh.advertise<gazebo_grasp_plugin::GazeboGraspEvent>("grasp_events", 1, true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -954,4 +957,24 @@ void GazeboGraspFix::OnContact(const ConstContactsPtr &_msg)
       //gzmsg<<"Average force of contact= "<<avgForce.x<<", "<<avgForce.y<<", "<<avgForce.z<<" out of "<<force.size()<<" vectors."<<std::endl;
     }
   }
+}
+
+void GazeboGraspFix::OnAttach(const std::string &objectName,
+                              const std::string &armName)
+{
+  gazebo_grasp_plugin::GazeboGraspEvent event;
+  event.arm = armName;
+  event.object = objectName;
+  event.attached = true;
+  events_pub.publish(event);
+}
+
+void GazeboGraspFix::OnDetach(const std::string &objectName,
+                              const std::string &armName)
+{
+  gazebo_grasp_plugin::GazeboGraspEvent event;
+  event.arm = armName;
+  event.object = objectName;
+  event.attached = false;
+  events_pub.publish(event);
 }
