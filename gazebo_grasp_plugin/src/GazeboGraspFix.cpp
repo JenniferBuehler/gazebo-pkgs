@@ -4,10 +4,11 @@
 #include <gazebo/physics/ContactManager.hh>
 #include <gazebo/physics/Contact.hh>
 #include <gazebo/common/common.hh>
-#include <stdio.h>
 
 #include <gazebo_grasp_plugin/GazeboGraspFix.h>
 #include <gazebo_version_helpers/GazeboVersionHelpers.h>
+
+#include <msgs/grasp_event.pb.h>
 
 using gazebo::GazeboGraspFix;
 using gazebo::GzVector3;
@@ -279,6 +280,9 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     this->contactSub = this->node->Subscribe(topic, &GazeboGraspFix::OnContact,
                        this, latching);
   }
+
+  gzmsg << "Advertising grasping events on topic grasp_events" << std::endl;
+  this->eventsPub = this->node->Advertise<msgs::GraspEvent>("~/grasp_events");
 
   update_connection = event::Events::ConnectWorldUpdateEnd(boost::bind(
                         &GazeboGraspFix::OnUpdate, this));
@@ -954,4 +958,24 @@ void GazeboGraspFix::OnContact(const ConstContactsPtr &_msg)
       //gzmsg<<"Average force of contact= "<<avgForce.x<<", "<<avgForce.y<<", "<<avgForce.z<<" out of "<<force.size()<<" vectors."<<std::endl;
     }
   }
+}
+
+void GazeboGraspFix::OnAttach(const std::string &objectName,
+                              const std::string &armName)
+{
+  msgs::GraspEvent event;
+  event.set_arm(armName);
+  event.set_object(objectName);
+  event.set_attached(true);
+  eventsPub->Publish(event);
+}
+
+void GazeboGraspFix::OnDetach(const std::string &objectName,
+                              const std::string &armName)
+{
+  msgs::GraspEvent event;
+  event.set_arm(armName);
+  event.set_object(objectName);
+  event.set_attached(false);
+  eventsPub->Publish(event);
 }
