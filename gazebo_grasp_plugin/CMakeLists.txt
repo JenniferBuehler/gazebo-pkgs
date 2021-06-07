@@ -30,7 +30,7 @@ find_package(gazebo REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES gazebo_grasp_fix
+  LIBRARIES gazebo_grasp_fix gazebo_grasp_msgs
   CATKIN_DEPENDS gazebo_ros geometry_msgs roscpp std_msgs gazebo_version_helpers
   DEPENDS gazebo
 )
@@ -57,11 +57,14 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${GAZEBO_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+add_subdirectory(msgs)
 link_directories(
   ${catkin_LIBRARY_DIRS}
   ${GAZEBO_LIBRARY_DIRS}
+  ${CMAKE_CURRENT_BINARY_DIR}/msgs
 )
 
 ## Declare a cpp library
@@ -74,10 +77,11 @@ add_dependencies(gazebo_grasp_fix ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 
-target_link_libraries(gazebo_grasp_fix 
-	${catkin_LIBRARIES} 
-	${GAZEBO_LIBRARIES} 
-	${Boost_LIBRARIES}
+target_link_libraries(gazebo_grasp_fix
+   gazebo_grasp_msgs
+   ${catkin_LIBRARIES}
+   ${GAZEBO_LIBRARIES}
+   ${Boost_LIBRARIES}
 )
 
 #############
