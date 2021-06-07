@@ -9,7 +9,6 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   roscpp
   std_msgs
-  message_generation
   gazebo_version_helpers
 )
 
@@ -19,16 +18,6 @@ find_package(gazebo REQUIRED)
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
 # catkin_python_setup()
-
-##############
-## Messages ##
-##############
-add_message_files(
-  FILES GazeboGraspEvent.msg
-)
-generate_messages(
-  DEPENDENCIES std_msgs
-)
 
 ###################################
 ## catkin specific configuration ##
@@ -41,8 +30,8 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES gazebo_grasp_fix
-  CATKIN_DEPENDS gazebo_ros geometry_msgs roscpp std_msgs message_runtime gazebo_version_helpers
+  LIBRARIES gazebo_grasp_fix gazebo_grasp_msgs
+  CATKIN_DEPENDS gazebo_ros geometry_msgs roscpp std_msgs gazebo_version_helpers
   DEPENDS gazebo
 )
 
@@ -68,11 +57,14 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${GAZEBO_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+add_subdirectory(msgs)
 link_directories(
   ${catkin_LIBRARY_DIRS}
   ${GAZEBO_LIBRARY_DIRS}
+  ${CMAKE_CURRENT_BINARY_DIR}/msgs
 )
 
 ## Declare a cpp library
@@ -80,15 +72,16 @@ add_library(gazebo_grasp_fix SHARED src/GazeboGraspFix.cpp src/GazeboGraspGrippe
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(gazebo_grasp_fix gazebo_grasp_plugin_generate_messages_cpp)
+# add_dependencies(gazebo_grasp_plugin_node gazebo_grasp_plugin_generate_messages_cpp)
 add_dependencies(gazebo_grasp_fix ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 
-target_link_libraries(gazebo_grasp_fix 
-	${catkin_LIBRARIES} 
-	${GAZEBO_LIBRARIES} 
-	${Boost_LIBRARIES}
+target_link_libraries(gazebo_grasp_fix
+   gazebo_grasp_msgs
+   ${catkin_LIBRARIES}
+   ${GAZEBO_LIBRARIES}
+   ${Boost_LIBRARIES}
 )
 
 #############

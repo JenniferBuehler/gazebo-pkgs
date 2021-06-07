@@ -6,8 +6,9 @@
 #include <gazebo/common/common.hh>
 
 #include <gazebo_grasp_plugin/GazeboGraspFix.h>
-#include <gazebo_grasp_plugin/GazeboGraspEvent.h>
 #include <gazebo_version_helpers/GazeboVersionHelpers.h>
+
+#include <msgs/grasp_event.pb.h>
 
 using gazebo::GazeboGraspFix;
 using gazebo::GzVector3;
@@ -53,9 +54,6 @@ GazeboGraspFix::~GazeboGraspFix()
 void GazeboGraspFix::Init()
 {
   this->prevUpdateTime = common::Time::GetWallTime();
-
-  ros::NodeHandle pnh("~");
-  events_pub = pnh.advertise<gazebo_grasp_plugin::GazeboGraspEvent>("grasp_events", 1, true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -282,6 +280,9 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     this->contactSub = this->node->Subscribe(topic, &GazeboGraspFix::OnContact,
                        this, latching);
   }
+
+  gzmsg << "Advertising grasping events on topic grasp_events" << std::endl;
+  this->eventsPub = this->node->Advertise<msgs::GraspEvent>("~grasp_events");
 
   update_connection = event::Events::ConnectWorldUpdateEnd(boost::bind(
                         &GazeboGraspFix::OnUpdate, this));
@@ -962,19 +963,19 @@ void GazeboGraspFix::OnContact(const ConstContactsPtr &_msg)
 void GazeboGraspFix::OnAttach(const std::string &objectName,
                               const std::string &armName)
 {
-  gazebo_grasp_plugin::GazeboGraspEvent event;
-  event.arm = armName;
-  event.object = objectName;
-  event.attached = true;
-  events_pub.publish(event);
+  msgs::GraspEvent event;
+  event.set_arm(armName);
+  event.set_object(objectName);
+  event.set_attached(true);
+  eventsPub->Publish(event);
 }
 
 void GazeboGraspFix::OnDetach(const std::string &objectName,
                               const std::string &armName)
 {
-  gazebo_grasp_plugin::GazeboGraspEvent event;
-  event.arm = armName;
-  event.object = objectName;
-  event.attached = false;
-  events_pub.publish(event);
+  msgs::GraspEvent event;
+  event.set_arm(armName);
+  event.set_object(objectName);
+  event.set_attached(false);
+  eventsPub->Publish(event);
 }

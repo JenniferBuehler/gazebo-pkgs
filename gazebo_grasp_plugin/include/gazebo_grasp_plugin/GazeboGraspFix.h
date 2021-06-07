@@ -6,8 +6,7 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
 #include <gazebo/transport/TransportTypes.hh>
-#include <ros/ros.h>
-
+#include <stdio.h>
 #include <gazebo_grasp_plugin/GazeboGraspGripper.h>
 
 namespace gazebo
@@ -190,10 +189,11 @@ class GazeboGraspFix : public ModelPlugin
 
     event::ConnectionPtr update_connection;
     transport::NodePtr node;
-    transport::SubscriberPtr contactSub; //subscriber to contact updates
+    transport::PublisherPtr eventsPub;   // publisher of grasping events
+    transport::SubscriberPtr contactSub; // subscriber to contact updates
 
     // tolerance (in degrees) between force vectors to
-    // beconsidered "opposing"
+    // be considered "opposing"
     float forcesAngleTolerance;
 
     // when an object is attached, collisions with it may be disabled, in case the
@@ -253,8 +253,6 @@ class GazeboGraspFix : public ModelPlugin
 
     //ContactManager filter to be removed in destructor
     std::string filter_name;
-
-    ros::Publisher events_pub;
 };
 
 }
