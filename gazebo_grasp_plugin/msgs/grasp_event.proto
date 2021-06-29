@@ -3,11 +3,15 @@ package gazebo.msgs;
 
 /// \ingroup gazebo_msgs
 /// \interface GraspEvent
-/// \brief Message to notify grasping events
-
+/// \brief Message to notify about grasp events
 message GraspEvent
 {
-  required string arm = 1;     // responsible arm
-  required string object = 2;  // affected object
-  required bool attached = 3;  // detached if false
+  // name of grasping arm/gripper
+  required string arm = 1;
+  
+  // collision shape name of grasped object
+  required string object = 2;
+  
+  // detached if false
+  required bool attached = 3;
 }

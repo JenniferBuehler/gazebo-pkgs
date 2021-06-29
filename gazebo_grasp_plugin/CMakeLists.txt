@@ -29,11 +29,18 @@ find_package(gazebo REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
+  # Binary directory required for proto headers inclusion to work, because install commands don't
+  # get executed in devel space. The directory above is required so that an include of
+  # <gazebo_grasp_plugin/msgs/grasp_event.pb.h> 
+  # also works in devel space like it needs to be in install space.
+  # Probably we can find a better solution for this, but until then this
+  # fix will be OK.
+  INCLUDE_DIRS include ${CMAKE_CURRENT_BINARY_DIR}/..
   LIBRARIES gazebo_grasp_fix gazebo_grasp_msgs
   CATKIN_DEPENDS gazebo_ros geometry_msgs roscpp std_msgs gazebo_version_helpers
   DEPENDS gazebo
 )
+
 
 ###########
 ## Build ##

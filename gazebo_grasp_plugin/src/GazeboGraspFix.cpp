@@ -282,7 +282,7 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   }
 
   gzmsg << "Advertising grasping events on topic grasp_events" << std::endl;
-  this->eventsPub = this->node->Advertise<msgs::GraspEvent>("~grasp_events");
+  this->eventsPub = this->node->Advertise<msgs::GraspEvent>("~/grasp_events");
 
   update_connection = event::Events::ConnectWorldUpdateEnd(boost::bind(
                         &GazeboGraspFix::OnUpdate, this));
