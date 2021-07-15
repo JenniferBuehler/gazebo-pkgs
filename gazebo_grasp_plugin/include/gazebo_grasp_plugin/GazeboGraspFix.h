@@ -95,19 +95,20 @@ class GazeboGraspFix : public ModelPlugin
     GazeboGraspFix();
     GazeboGraspFix(physics::ModelPtr _model);
     virtual ~GazeboGraspFix();
+  
+  private:
 
     /**
      * Gets called just after the object has been attached to the palm link on \e armName
      */
-    virtual void OnAttach(const std::string &objectName,
-                          const std::string &armName) {}
+    void OnAttach(const std::string &objectName,
+                          const std::string &armName);
     /**
      * Gets called just after the object has been detached to the palm link on \e armName
      */
-    virtual void OnDetach(const std::string &objectName,
-                          const std::string &armName) {}
+    void OnDetach(const std::string &objectName,
+                          const std::string &armName);
 
-  private:
     virtual void Init();
     virtual void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf);
     /**
@@ -189,10 +190,11 @@ class GazeboGraspFix : public ModelPlugin
 
     event::ConnectionPtr update_connection;
     transport::NodePtr node;
-    transport::SubscriberPtr contactSub; //subscriber to contact updates
+    transport::PublisherPtr eventsPub;   // publisher of grasping events
+    transport::SubscriberPtr contactSub; // subscriber to contact updates
 
     // tolerance (in degrees) between force vectors to
-    // beconsidered "opposing"
+    // be considered "opposing"
     float forcesAngleTolerance;
 
     // when an object is attached, collisions with it may be disabled, in case the

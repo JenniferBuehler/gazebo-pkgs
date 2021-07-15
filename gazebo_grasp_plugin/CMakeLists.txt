@@ -29,11 +29,18 @@ find_package(gazebo REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES gazebo_grasp_fix
+  # Binary directory required for proto headers inclusion to work, because install commands don't
+  # get executed in devel space. The directory above is required so that an include of
+  # <gazebo_grasp_plugin/msgs/grasp_event.pb.h> 
+  # also works in devel space like it needs to be in install space.
+  # Probably we can find a better solution for this, but until then this
+  # fix will be OK.
+  INCLUDE_DIRS include ${CMAKE_CURRENT_BINARY_DIR}/..
+  LIBRARIES gazebo_grasp_fix gazebo_grasp_msgs
   CATKIN_DEPENDS gazebo_ros geometry_msgs roscpp std_msgs gazebo_version_helpers
   DEPENDS gazebo
 )
+
 
 ###########
 ## Build ##
@@ -57,11 +64,14 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${GAZEBO_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+add_subdirectory(msgs)
 link_directories(
   ${catkin_LIBRARY_DIRS}
   ${GAZEBO_LIBRARY_DIRS}
+  ${CMAKE_CURRENT_BINARY_DIR}/msgs
 )
 
 ## Declare a cpp library
@@ -74,10 +84,11 @@ add_dependencies(gazebo_grasp_fix ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 
-target_link_libraries(gazebo_grasp_fix 
-	${catkin_LIBRARIES} 
-	${GAZEBO_LIBRARIES} 
-	${Boost_LIBRARIES}
+target_link_libraries(gazebo_grasp_fix
+   gazebo_grasp_msgs
+   ${catkin_LIBRARIES}
+   ${GAZEBO_LIBRARIES}
+   ${Boost_LIBRARIES}
 )
 
 #############
